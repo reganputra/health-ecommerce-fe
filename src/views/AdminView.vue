@@ -83,11 +83,73 @@
                 </select>
               </div>
               <div class="form-group">
-                <label>Image URL</label>
-                <input v-model="productForm.image_url" type="url" required />
+                <label>Product Image</label>
+                <input
+                  type="file"
+                  @change="handleImageUpload"
+                  accept="image/*"
+                  ref="imageInput"
+                />
+                <div v-if="imagePreview" class="image-preview">
+                  <img :src="imagePreview" alt="Preview" />
+                  <button type="button" @click="clearImage" class="btn-clear-image">Remove</button>
+                </div>
               </div>
               <div class="form-actions">
                 <button type="button" @click="closeProductForm" class="btn-secondary">Cancel</button>
+                <button type="submit" class="btn-primary">Save</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="activeTab === 'categories'" class="categories-admin">
+        <div class="section-header">
+          <h2>Manage Categories</h2>
+          <button @click="showCategoryForm = true" class="btn-primary">Add Category</button>
+        </div>
+
+        <div v-if="loadingCategories" class="loading">Loading...</div>
+
+        <div v-else class="admin-table">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="category in productsStore.categories" :key="category.id">
+                <td>{{ category.id }}</td>
+                <td>{{ category.name }}</td>
+                <td>{{ category.description }}</td>
+                <td class="actions">
+                  <button @click="editCategory(category)" class="btn-edit">Edit</button>
+                  <button @click="deleteCategory(category.id)" class="btn-delete">Delete</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-if="showCategoryForm" class="modal">
+          <div class="modal-content">
+            <h3>{{ editingCategory ? 'Edit Category' : 'Add Category' }}</h3>
+            <form @submit.prevent="saveCategory">
+              <div class="form-group">
+                <label>Name</label>
+                <input v-model="categoryForm.name" required />
+              </div>
+              <div class="form-group">
+                <label>Description</label>
+                <textarea v-model="categoryForm.description" rows="3"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="button" @click="closeCategoryForm" class="btn-secondary">Cancel</button>
                 <button type="submit" class="btn-primary">Save</button>
               </div>
             </form>
@@ -226,6 +288,7 @@ const productsStore = useProductsStore()
 const activeTab = ref('products')
 const tabs = [
   { id: 'products', label: 'Products' },
+  { id: 'categories', label: 'Categories' },
   { id: 'orders', label: 'Orders' },
   { id: 'users', label: 'Users' },
   { id: 'reports', label: 'Reports' },
@@ -241,6 +304,17 @@ const productForm = ref({
   category_id: '',
   image_url: '',
 })
+const imageFile = ref(null)
+const imagePreview = ref(null)
+const imageInput = ref(null)
+
+const showCategoryForm = ref(false)
+const editingCategory = ref(null)
+const categoryForm = ref({
+  name: '',
+  description: '',
+})
+const loadingCategories = ref(false)
 
 const allOrders = ref([])
 const loadingOrders = ref(false)
@@ -272,6 +346,34 @@ function editProduct(product) {
   editingProduct.value = product
   productForm.value = { ...product }
   showProductForm.value = true
+  // Set preview for existing image
+  if (product.image_url) {
+    imagePreview.value = product.image_url
+  }
+}
+
+function handleImageUpload(event) {
+  const file = event.target.files[0]
+  if (file) {
+    imageFile.value = file
+    // Create preview
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      imagePreview.value = e.target.result
+      // Store base64 in productForm for API
+      productForm.value.image_url = e.target.result
+    }
+    reader.readAsDataURL(file)
+  }
+}
+
+function clearImage() {
+  imageFile.value = null
+  imagePreview.value = null
+  productForm.value.image_url = ''
+  if (imageInput.value) {
+    imageInput.value.value = ''
+  }
 }
 
 async function saveProduct() {
@@ -309,6 +411,60 @@ function closeProductForm() {
     stock: 0,
     category_id: '',
     image_url: '',
+  }
+  imageFile.value = null
+  imagePreview.value = null
+  if (imageInput.value) {
+    imageInput.value.value = ''
+  }
+}
+
+// Category Management Functions
+function editCategory(category) {
+  editingCategory.value = category
+  categoryForm.value = { ...category }
+  showCategoryForm.value = true
+}
+
+async function saveCategory() {
+  try {
+    loadingCategories.value = true
+    if (editingCategory.value) {
+      await api.updateCategory(editingCategory.value.id, categoryForm.value)
+    } else {
+      await api.createCategory(categoryForm.value)
+    }
+    await productsStore.fetchCategories()
+    closeCategoryForm()
+    alert('Category saved successfully')
+  } catch (error) {
+    alert(error.message)
+  } finally {
+    loadingCategories.value = false
+  }
+}
+
+async function deleteCategory(id) {
+  if (!confirm('Are you sure you want to delete this category?')) return
+
+  try {
+    loadingCategories.value = true
+    await api.deleteCategory(id)
+    await productsStore.fetchCategories()
+    alert('Category deleted successfully')
+  } catch (error) {
+    alert(error.message)
+  } finally {
+    loadingCategories.value = false
+  }
+}
+
+function closeCategoryForm() {
+  showCategoryForm.value = false
+  editingCategory.value = null
+  categoryForm.value = {
+    name: '',
+    description: '',
   }
 }
 
@@ -590,6 +746,40 @@ td {
   border-radius: 6px;
   font-size: 14px;
   box-sizing: border-box;
+}
+
+.form-group input[type="file"] {
+  padding: 8px;
+}
+
+.image-preview {
+  margin-top: 16px;
+  position: relative;
+  display: inline-block;
+}
+
+.image-preview img {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  display: block;
+}
+
+.btn-clear-image {
+  margin-top: 8px;
+  padding: 6px 12px;
+  background: #ffebee;
+  color: #c62828;
+  border: none;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-clear-image:hover {
+  background: #ffcdd2;
 }
 
 .form-actions {
