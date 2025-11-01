@@ -1,195 +1,144 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+import { apiClient } from './apiClient'
+import { API_ENDPOINTS } from '@/constants'
 
+/**
+ * Health Store API Service
+ * High-level API methods for all backend operations
+ */
 class HealthStoreAPI {
-  constructor(baseURL = API_BASE_URL) {
-    this.baseURL = baseURL
+  constructor(client = apiClient) {
+    this.client = client
   }
 
-  getHeaders(includeAuth = true) {
-    const headers = {
-      'Content-Type': 'application/json',
-    }
-
-    if (includeAuth) {
-      const token = localStorage.getItem('authToken')
-      if (token) {
-        headers['Authorization'] = `Bearer ${token}`
-      }
-    }
-
-    return headers
-  }
-
-  async request(endpoint, options = {}) {
-    const url = `${this.baseURL}${endpoint}`
-    const response = await fetch(url, {
-      ...options,
-      headers: {
-        ...this.getHeaders(options.auth !== false),
-        ...options.headers,
-      },
-    })
-
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ error: 'Request failed' }))
-      throw new Error(error.error || `Request failed with status ${response.status}`)
-    }
-
-    return await response.json()
-  }
-
+  // ==================== Auth ====================
   async register(userData) {
-    return this.request('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-      auth: false,
-    })
+    return this.client.post(API_ENDPOINTS.REGISTER, userData, { auth: false })
   }
 
   async login(username, password) {
-    return this.request('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ username, password }),
-      auth: false,
-    })
+    return this.client.post(
+      API_ENDPOINTS.LOGIN,
+      { username, password },
+      { auth: false }
+    )
   }
 
+  // ==================== Products ====================
   async getProducts() {
-    return this.request('/api/products', { auth: false })
+    return this.client.get(API_ENDPOINTS.PRODUCTS, { auth: false })
   }
 
   async getProduct(id) {
-    return this.request(`/api/products/${id}`, { auth: false })
+    return this.client.get(API_ENDPOINTS.PRODUCT(id), { auth: false })
   }
 
   async createProduct(productData) {
-    return this.request('/admin/products', {
-      method: 'POST',
-      body: JSON.stringify(productData),
-    })
+    return this.client.post(API_ENDPOINTS.ADMIN_PRODUCTS, productData)
   }
 
   async updateProduct(id, productData) {
-    return this.request(`/admin/products/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(productData),
-    })
+    return this.client.put(API_ENDPOINTS.ADMIN_PRODUCT(id), productData)
   }
 
   async deleteProduct(id) {
-    return this.request(`/admin/products/${id}`, {
-      method: 'DELETE',
-    })
+    return this.client.delete(API_ENDPOINTS.ADMIN_PRODUCT(id))
   }
 
+  // ==================== Categories ====================
   async getCategories() {
-    return this.request('/api/categories', { auth: false })
+    return this.client.get(API_ENDPOINTS.CATEGORIES, { auth: false })
   }
 
   async getCategory(id) {
-    return this.request(`/api/categories/${id}`, { auth: false })
+    return this.client.get(API_ENDPOINTS.CATEGORY(id), { auth: false })
   }
 
   async createCategory(categoryData) {
-    return this.request('/admin/categories', {
-      method: 'POST',
-      body: JSON.stringify(categoryData),
-    })
+    return this.client.post(API_ENDPOINTS.ADMIN_CATEGORIES, categoryData)
   }
 
   async updateCategory(id, categoryData) {
-    return this.request(`/admin/categories/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(categoryData),
-    })
+    return this.client.put(API_ENDPOINTS.ADMIN_CATEGORY(id), categoryData)
   }
 
   async deleteCategory(id) {
-    return this.request(`/admin/categories/${id}`, {
-      method: 'DELETE',
-    })
+    return this.client.delete(API_ENDPOINTS.ADMIN_CATEGORY(id))
   }
 
+  // ==================== Cart ====================
   async getCart() {
-    return this.request('/cart/')
+    return this.client.get(API_ENDPOINTS.CART)
   }
 
   async addToCart(productId, quantity) {
-    return this.request('/cart/', {
-      method: 'POST',
-      body: JSON.stringify({ product_id: productId, quantity }),
+    return this.client.post(API_ENDPOINTS.CART, {
+      product_id: productId,
+      quantity,
     })
   }
 
   async removeFromCart(cartItemId) {
-    return this.request(`/cart/${cartItemId}`, {
-      method: 'DELETE',
-    })
+    return this.client.delete(API_ENDPOINTS.CART_ITEM(cartItemId))
   }
 
+  // ==================== Orders ====================
   async placeOrder(paymentMethod, bankName = '') {
-    return this.request('/orders/', {
-      method: 'POST',
-      body: JSON.stringify({
-        payment_method: paymentMethod,
-        bank_name: bankName,
-      }),
+    return this.client.post(API_ENDPOINTS.ORDERS, {
+      payment_method: paymentMethod,
+      bank_name: bankName,
     })
   }
 
   async getOrders() {
-    return this.request('/orders/')
+    return this.client.get(API_ENDPOINTS.ORDERS)
   }
 
   async getOrder(id) {
-    return this.request(`/orders/${id}`)
+    return this.client.get(API_ENDPOINTS.ORDER(id))
   }
 
   async cancelOrder(id) {
-    return this.request(`/orders/${id}/cancel`, {
-      method: 'PUT',
-    })
+    return this.client.put(API_ENDPOINTS.CANCEL_ORDER(id))
   }
 
+  // ==================== Admin - Orders ====================
   async getAllOrders() {
-    return this.request('/admin/orders/')
+    return this.client.get(API_ENDPOINTS.ADMIN_ORDERS)
   }
 
   async updateOrderStatus(orderId, status) {
-    return this.request(`/admin/orders/${orderId}/status`, {
-      method: 'PUT',
-      body: JSON.stringify({ status }),
+    return this.client.put(API_ENDPOINTS.ADMIN_ORDER_STATUS(orderId), {
+      status,
     })
   }
 
-  async submitFeedback(productId, comment, rating) {
-    return this.request('/feedback/', {
-      method: 'POST',
-      body: JSON.stringify({ product_id: productId, comment, rating }),
-    })
-  }
-
+  // ==================== Admin - Users ====================
   async getAllUsers() {
-    return this.request('/admin/users')
+    return this.client.get(API_ENDPOINTS.ADMIN_USERS)
   }
 
   async getUser(id) {
-    return this.request(`/admin/users/${id}`)
+    return this.client.get(API_ENDPOINTS.ADMIN_USER(id))
   }
 
   async updateUser(id, userData) {
-    return this.request(`/admin/users/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(userData),
-    })
+    return this.client.put(API_ENDPOINTS.ADMIN_USER(id), userData)
   }
 
   async deleteUser(id) {
-    return this.request(`/admin/users/${id}`, {
-      method: 'DELETE',
+    return this.client.delete(API_ENDPOINTS.ADMIN_USER(id))
+  }
+
+  // ==================== Feedback ====================
+  async submitFeedback(productId, comment, rating) {
+    return this.client.post(API_ENDPOINTS.FEEDBACK, {
+      product_id: productId,
+      comment,
+      rating,
     })
   }
 
+  // ==================== Reports ====================
   async generateReport(type = 'summary', format = 'pdf', startDate = null, endDate = null) {
     const params = new URLSearchParams()
     params.append('type', type)
@@ -197,27 +146,17 @@ class HealthStoreAPI {
     if (startDate) params.append('start_date', startDate)
     if (endDate) params.append('end_date', endDate)
 
-    const token = localStorage.getItem('authToken')
-    const response = await fetch(`${this.baseURL}/admin/report?${params.toString()}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    })
-
-    if (!response.ok) {
-      throw new Error('Failed to generate report')
-    }
-
-    const blob = await response.blob()
-    const url = window.URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `report_${type}_${Date.now()}.${format}`
-    document.body.appendChild(a)
-    a.click()
-    window.URL.revokeObjectURL(url)
-    document.body.removeChild(a)
+    const filename = `report_${type}_${Date.now()}.${format}`
+    await this.client.downloadFile(
+      `${API_ENDPOINTS.ADMIN_REPORT}?${params.toString()}`,
+      filename
+    )
   }
 }
 
-export default new HealthStoreAPI()
+// Export singleton instance
+const api = new HealthStoreAPI()
+export default api
+
+// Also export the class for testing
+export { HealthStoreAPI }

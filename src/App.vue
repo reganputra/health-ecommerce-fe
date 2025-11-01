@@ -1,6 +1,7 @@
 <script setup>
 import { RouterView } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
+import NotificationToast from './components/common/NotificationToast.vue'
 </script>
 
 <template>
@@ -9,6 +10,7 @@ import AppHeader from './components/AppHeader.vue'
     <main class="main-content">
       <RouterView />
     </main>
+    <NotificationToast />
   </div>
 </template>
 
