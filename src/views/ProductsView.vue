@@ -79,10 +79,12 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProductsStore } from '@/stores/products'
 import { useCartStore } from '@/stores/cart'
+import { useNotification } from '@/composables'
 
 const router = useRouter()
 const productsStore = useProductsStore()
 const cartStore = useCartStore()
+const { error } = useNotification()
 
 const addingToCart = ref(null)
 
@@ -112,8 +114,8 @@ async function addToCart(productId) {
   try {
     addingToCart.value = productId
     await cartStore.addToCart(productId, 1)
-  } catch (error) {
-    alert(error.message)
+  } catch (err) {
+    error(err.message)
   } finally {
     addingToCart.value = null
   }

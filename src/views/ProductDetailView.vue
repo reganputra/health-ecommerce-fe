@@ -90,6 +90,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useProductsStore } from '@/stores/products'
 import { useCartStore } from '@/stores/cart'
 import { useAuthStore } from '@/stores/auth'
+import { useNotification } from '@/composables'
 import api from '@/services/api'
 
 const route = useRoute()
@@ -97,6 +98,7 @@ const router = useRouter()
 const productsStore = useProductsStore()
 const cartStore = useCartStore()
 const authStore = useAuthStore()
+const { success, warning, error: notifyError } = useNotification()
 
 const product = ref(null)
 const loading = ref(false)
@@ -137,7 +139,7 @@ function goBack() {
 
 async function addToCart() {
   if (!authStore.isAuthenticated) {
-    alert('Please login to add items to cart')
+    warning('Please login to add items to cart')
     router.push('/login')
     return
   }
@@ -145,10 +147,10 @@ async function addToCart() {
   try {
     addingToCart.value = true
     await cartStore.addToCart(product.value.id, quantity.value)
-    alert('Added to cart successfully!')
+    success('Added to cart successfully!')
     quantity.value = 1
-  } catch (error) {
-    alert(error.message)
+  } catch (err) {
+    notifyError(err.message)
   } finally {
     addingToCart.value = false
   }
@@ -156,13 +158,13 @@ async function addToCart() {
 
 async function submitFeedback() {
   if (!authStore.isAuthenticated) {
-    alert('Please login to submit a review')
+    warning('Please login to submit a review')
     router.push('/login')
     return
   }
 
   if (!feedbackForm.value.comment.trim()) {
-    alert('Please write a comment')
+    warning('Please write a comment')
     return
   }
 
@@ -173,12 +175,12 @@ async function submitFeedback() {
       feedbackForm.value.comment,
       feedbackForm.value.rating
     )
-    alert('Review submitted successfully!')
+    success('Review submitted successfully!')
     feedbackForm.value.comment = ''
     feedbackForm.value.rating = 5
     showFeedbackForm.value = false
-  } catch (error) {
-    alert(error.message)
+  } catch (err) {
+    notifyError(err.message)
   } finally {
     submittingFeedback.value = false
   }

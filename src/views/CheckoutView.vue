@@ -70,10 +70,12 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
+import { useNotification } from '@/composables'
 import api from '@/services/api'
 
 const router = useRouter()
 const cartStore = useCartStore()
+const { success, warning } = useNotification()
 
 const loading = ref(false)
 const submitting = ref(false)
@@ -90,7 +92,7 @@ onMounted(async () => {
   }
 
   if (!cartStore.cart || cartStore.cart.items.length === 0) {
-    alert('Your cart is empty')
+    warning('Your cart is empty')
     router.push('/products')
   }
 })
@@ -104,7 +106,7 @@ async function handlePlaceOrder() {
 
     cartStore.clearCart()
 
-    alert('Order placed successfully!')
+    success('Order placed successfully!')
     router.push('/orders')
   } catch (error) {
     errorMessage.value = error.message || 'Failed to place order. Please try again.'

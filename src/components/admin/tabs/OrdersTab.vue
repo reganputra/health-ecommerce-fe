@@ -41,9 +41,11 @@
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
 import DataTable from '@/components/common/DataTable.vue'
+import { useNotification } from '@/composables'
 
 const orders = ref([])
 const loading = ref(false)
+const { success, error } = useNotification()
 
 const columns = [
   { key: 'id', label: 'Order ID' },
@@ -63,8 +65,8 @@ async function fetchOrders() {
   try {
     loading.value = true
     orders.value = await api.getAllOrders()
-  } catch (error) {
-    alert(error.message)
+  } catch (err) {
+    error(err.message)
   } finally {
     loading.value = false
   }
@@ -74,9 +76,9 @@ async function handleStatusChange(orderId, newStatus) {
   try {
     await api.updateOrderStatus(orderId, newStatus)
     await fetchOrders()
-    alert('Order status updated successfully')
-  } catch (error) {
-    alert(error.message)
+    success('Order status updated successfully')
+  } catch (err) {
+    error(err.message)
   }
 }
 

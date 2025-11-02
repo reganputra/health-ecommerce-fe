@@ -18,9 +18,11 @@
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
 import DataTable from '@/components/common/DataTable.vue'
+import { useNotification } from '@/composables'
 
 const users = ref([])
 const loading = ref(false)
+const { success, error } = useNotification()
 
 const columns = [
   { key: 'id', label: 'ID' },
@@ -39,8 +41,8 @@ async function fetchUsers() {
   try {
     loading.value = true
     users.value = await api.getAllUsers()
-  } catch (error) {
-    alert(error.message)
+  } catch (err) {
+    error(err.message)
   } finally {
     loading.value = false
   }
@@ -52,9 +54,9 @@ async function handleDelete(id) {
   try {
     await api.deleteUser(id)
     await fetchUsers()
-    alert('User deleted successfully')
-  } catch (error) {
-    alert(error.message)
+    success('User deleted successfully')
+  } catch (err) {
+    error(err.message)
   }
 }
 </script>

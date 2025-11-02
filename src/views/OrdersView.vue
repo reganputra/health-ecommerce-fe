@@ -59,9 +59,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useNotification } from '@/composables'
 import api from '@/services/api'
 
 const router = useRouter()
+const { success, error: notifyError } = useNotification()
 
 const orders = ref([])
 const loading = ref(false)
@@ -122,9 +124,9 @@ async function cancelOrder(id) {
     cancelingOrder.value = id
     await api.cancelOrder(id)
     await fetchOrders()
-    alert('Order canceled successfully')
-  } catch (error) {
-    alert(error.message)
+    success('Order canceled successfully')
+  } catch (err) {
+    notifyError(err.message)
   } finally {
     cancelingOrder.value = null
   }

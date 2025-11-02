@@ -1,6 +1,8 @@
 import { ref, computed } from 'vue'
 import { defineStore } from 'pinia'
 import api from '@/services/api'
+import { storage } from '@/composables/useStorage'
+import { STORAGE_KEYS } from '@/constants'
 
 export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
@@ -12,12 +14,12 @@ export const useAuthStore = defineStore('auth', () => {
   const isAdmin = computed(() => user.value?.role === 'admin')
 
   function loadStoredAuth() {
-    const storedToken = localStorage.getItem('authToken')
-    const storedUser = localStorage.getItem('user')
+    const storedToken = storage.get(STORAGE_KEYS.AUTH_TOKEN)
+    const storedUser = storage.get(STORAGE_KEYS.USER_DATA)
 
     if (storedToken && storedUser) {
       token.value = storedToken
-      user.value = JSON.parse(storedUser)
+      user.value = storedUser
     }
   }
 
@@ -31,8 +33,8 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = response.token
       user.value = response.user
 
-      localStorage.setItem('authToken', response.token)
-      localStorage.setItem('user', JSON.stringify(response.user))
+      storage.set(STORAGE_KEYS.AUTH_TOKEN, response.token)
+      storage.set(STORAGE_KEYS.USER_DATA, response.user)
 
       return response
     } catch (err) {
@@ -62,8 +64,8 @@ export const useAuthStore = defineStore('auth', () => {
     token.value = null
     user.value = null
 
-    localStorage.removeItem('authToken')
-    localStorage.removeItem('user')
+    storage.remove(STORAGE_KEYS.AUTH_TOKEN)
+    storage.remove(STORAGE_KEYS.USER_DATA)
   }
 
   loadStoredAuth()

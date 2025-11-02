@@ -40,6 +40,7 @@
 <script setup>
 import { ref } from 'vue'
 import api from '@/services/api'
+import { useNotification } from '@/composables'
 
 const form = ref({
   type: 'summary',
@@ -49,6 +50,7 @@ const form = ref({
 })
 
 const generating = ref(false)
+const { error } = useNotification()
 
 async function handleGenerate() {
   try {
@@ -59,8 +61,8 @@ async function handleGenerate() {
       form.value.startDate || null,
       form.value.endDate || null
     )
-  } catch (error) {
-    alert(error.message)
+  } catch (err) {
+    error(err.message)
   } finally {
     generating.value = false
   }

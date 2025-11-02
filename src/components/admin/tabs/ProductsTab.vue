@@ -38,10 +38,12 @@
 <script setup>
 import { ref } from 'vue'
 import { useProductsStore } from '@/stores/products'
+import { useNotification } from '@/composables'
 import DataTable from '@/components/common/DataTable.vue'
 import ProductForm from '@/components/admin/forms/ProductForm.vue'
 
 const productsStore = useProductsStore()
+const { success, error } = useNotification()
 
 const showForm = ref(false)
 const editingProduct = ref(null)
@@ -77,9 +79,9 @@ async function handleSave(formData) {
     } else {
       await productsStore.createProduct(formData)
     }
-    alert('Product saved successfully')
-  } catch (error) {
-    alert(error.message)
+    success('Product saved successfully')
+  } catch (err) {
+    error(err.message)
   }
 }
 
@@ -88,9 +90,9 @@ async function handleDelete(id) {
 
   try {
     await productsStore.deleteProduct(id)
-    alert('Product deleted successfully')
-  } catch (error) {
-    alert(error.message)
+    success('Product deleted successfully')
+  } catch (err) {
+    error(err.message)
   }
 }
 </script>

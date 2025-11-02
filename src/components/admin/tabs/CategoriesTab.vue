@@ -29,11 +29,13 @@
 <script setup>
 import { ref } from 'vue'
 import { useProductsStore } from '@/stores/products'
+import { useNotification } from '@/composables'
 import api from '@/services/api'
 import DataTable from '@/components/common/DataTable.vue'
 import CategoryForm from '@/components/admin/forms/CategoryForm.vue'
 
 const productsStore = useProductsStore()
+const { success, error } = useNotification()
 
 const showForm = ref(false)
 const editingCategory = ref(null)
@@ -65,9 +67,9 @@ async function handleSave(formData) {
       await api.createCategory(formData)
     }
     await productsStore.fetchCategories()
-    alert('Category saved successfully')
-  } catch (error) {
-    alert(error.message)
+    success('Category saved successfully')
+  } catch (err) {
+    error(err.message)
   } finally {
     loading.value = false
   }
@@ -80,9 +82,9 @@ async function handleDelete(id) {
     loading.value = true
     await api.deleteCategory(id)
     await productsStore.fetchCategories()
-    alert('Category deleted successfully')
-  } catch (error) {
-    alert(error.message)
+    success('Category deleted successfully')
+  } catch (err) {
+    error(err.message)
   } finally {
     loading.value = false
   }

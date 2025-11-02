@@ -72,9 +72,11 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCartStore } from '@/stores/cart'
+import { useNotification } from '@/composables'
 
 const router = useRouter()
 const cartStore = useCartStore()
+const { error } = useNotification()
 
 const removingItem = ref(null)
 
@@ -90,8 +92,8 @@ async function removeItem(itemId) {
   try {
     removingItem.value = itemId
     await cartStore.removeFromCart(itemId)
-  } catch (error) {
-    alert(error.message)
+  } catch (err) {
+    error(err.message)
   } finally {
     removingItem.value = null
   }
