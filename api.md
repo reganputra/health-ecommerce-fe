@@ -1,6 +1,6 @@
 # Health Store API Documentation
 
-**Version:** 1.0
+**Version:** 1.1
 **Base URL:** `http://localhost:8080` (development)
 **Authentication:** JWT Bearer Token
 **Content-Type:** `application/json`
@@ -20,6 +20,8 @@
    - [Orders](#orders)
    - [Feedback](#feedback)
    - [User Management (Admin)](#user-management)
+   - [Shop Management (Admin)](#shop-management)
+   - [GuestBook](#guestbook)
    - [Reports (Admin)](#reports)
 4. [Data Models](#data-models)
 5. [Error Handling](#error-handling)
@@ -28,6 +30,48 @@
 ---
 
 ## Quick Start
+
+### 0. Environment Setup
+
+Before running the application, configure your `.env` file:
+
+```bash
+# Copy the example env file
+cp .env.example .env
+```
+
+Edit `.env` and configure:
+
+1. **Database Settings:**
+
+   ```
+   DB_HOST=localhost
+   DB_PORT=3306
+   DB_USER=root
+   DB_PASSWORD=your_password
+   MYSQL_DATABASE=health-store-db
+   ```
+
+2. **JWT Secret:**
+
+   ```
+   JWT_SECRET_KEY=your-super-secret-jwt-key-at-least-32-characters-long
+   ```
+
+3. **Cloudinary (Required for Image Uploads):**
+
+   Get your credentials from [Cloudinary Console](https://cloudinary.com/console):
+
+   ```
+   CLOUDINARY_URL=cloudinary://your_api_key:your_api_secret@your_cloud_name
+   ```
+
+   **How to get Cloudinary credentials:**
+
+   - Sign up at https://cloudinary.com (free tier available)
+   - Go to Dashboard
+   - Copy the "API Environment variable" (it's in the format shown above)
+   - Paste it into your `.env` file
 
 ### 1. Register a New User
 
@@ -103,10 +147,11 @@ const response = await fetch("http://localhost:8080/cart/", {
 
 ### Role-Based Access Control
 
-| Role         | Permissions                                                                 |
-| ------------ | --------------------------------------------------------------------------- |
-| **Customer** | Browse products, manage cart, place orders, submit feedback                 |
-| **Admin**    | All customer permissions + manage users, products, categories, view reports |
+| Role         | Permissions                                                                                           |
+| ------------ | ----------------------------------------------------------------------------------------------------- |
+| **Customer** | Browse products, manage cart, place orders, submit feedback                                           |
+| **Admin**    | All customer permissions + manage users, products, categories, shops, guestbook entries, view reports |
+| **Visitor**  | Browse products, view shops, create guestbook entries (no authentication required)                    |
 
 ---
 
@@ -290,6 +335,8 @@ GET /api/products/:id
 
 **Success Response (200):**
 
+Returns product details along with all customer feedback/reviews for this product.
+
 ```json
 {
   "id": 1,
@@ -300,14 +347,70 @@ GET /api/products/:id
   "stock": 150,
   "image_url": "https://example.com/images/vitamin-c.jpg",
   "created_at": "2024-01-15T10:30:00Z",
-  "updated_at": "2024-01-15T10:30:00Z"
+  "updated_at": "2024-01-15T10:30:00Z",
+  "feedbacks": [
+    {
+      "id": 1,
+      "userId": 5,
+      "user": {
+        "id": 5,
+        "username": "john_doe"
+      },
+      "productId": 1,
+      "comment": "Excellent product! Really helped boost my immune system.",
+      "rating": 5,
+      "createdAt": "2024-01-20T14:30:00Z"
+    },
+    {
+      "id": 2,
+      "userId": 8,
+      "user": {
+        "id": 8,
+        "username": "jane_smith"
+      },
+      "productId": 1,
+      "comment": "Good quality, will buy again.",
+      "rating": 4,
+      "createdAt": "2024-01-22T09:15:00Z"
+    }
+  ]
 }
 ```
+
+**Notes:**
+
+- The `feedbacks` array includes all customer reviews for this product
+- Each feedback includes the username of the customer who left the review
+- Feedbacks are sorted by creation date
+- If no feedback exists, `feedbacks` will be an empty array
 
 **Error Responses:**
 
 - `400` - Invalid product ID
 - `404` - Product not found
+
+**Frontend Example:**
+
+```javascript
+async function getProductWithFeedback(productId) {
+  const response = await fetch(
+    `http://localhost:8080/api/products/${productId}`
+  );
+  const product = await response.json();
+
+  console.log(`Product: ${product.name}`);
+  console.log(`Average Rating: ${calculateAverageRating(product.feedbacks)}`);
+  console.log(`Reviews: ${product.feedbacks.length}`);
+
+  return product;
+}
+
+function calculateAverageRating(feedbacks) {
+  if (feedbacks.length === 0) return 0;
+  const sum = feedbacks.reduce((acc, f) => acc + f.rating, 0);
+  return (sum / feedbacks.length).toFixed(1);
+}
+```
 
 ---
 
@@ -318,6 +421,10 @@ POST /admin/products
 ```
 
 **Authentication:** Required (Admin role)
+
+**Content Type:** `application/json` OR `multipart/form-data`
+
+#### Option 1: JSON Request (with Image URL)
 
 **Request Body:**
 
@@ -332,13 +439,56 @@ POST /admin/products
 }
 ```
 
+#### Option 2: Multipart Form Data (with Image Upload)
+
+Upload an image file directly to Cloudinary. The image will be automatically optimized and stored.
+
+**Form Fields:**
+
+| Field         | Type | Required | Description                            |
+| ------------- | ---- | -------- | -------------------------------------- |
+| `category_id` | Text | Yes      | Category ID (integer)                  |
+| `name`        | Text | Yes      | Product name (2-255 chars)             |
+| `description` | Text | Yes      | Product description (10-1000 chars)    |
+| `price`       | Text | Yes      | Product price (decimal, e.g., "29.99") |
+| `stock`       | Text | Yes      | Stock quantity (integer, e.g., "100")  |
+| `image`       | File | Yes      | Image file (JPG, PNG, etc.)            |
+
+**Postman Example:**
+
+1. Set method to `POST`
+2. URL: `http://localhost:8080/admin/products`
+3. Headers: `Authorization: Bearer YOUR_TOKEN`
+4. Body: Select `form-data`
+5. Add fields:
+   - `category_id` (Text): `2`
+   - `name` (Text): `Omega-3 Fish Oil`
+   - `description` (Text): `Premium omega-3 supplement for heart health`
+   - `price` (Text): `29.99`
+   - `stock` (Text): `100`
+   - `image` (File): Select your image file
+
+**cURL Example:**
+
+```bash
+curl -X POST http://localhost:8080/admin/products \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "category_id=2" \
+  -F "name=Omega-3 Fish Oil" \
+  -F "description=Premium omega-3 supplement for heart health" \
+  -F "price=29.99" \
+  -F "stock=100" \
+  -F "image=@/path/to/image.jpg"
+```
+
 **Validation Rules:**
 
 - `name`: 2-255 characters
 - `description`: 10-1000 characters
 - `price`: Must be greater than 0
 - `stock`: Must be >= 0
-- `image_url`: Valid URL format
+- `image_url`: Valid URL format (when using JSON)
+- `image`: Valid image file (when using multipart)
 
 **Success Response (200):**
 
@@ -350,17 +500,26 @@ POST /admin/products
   "description": "Premium omega-3 supplement for heart health",
   "price": 29.99,
   "stock": 100,
-  "image_url": "https://example.com/images/omega3.jpg",
+  "image_url": "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/health-store/products/1234567890_image.jpg",
   "created_at": "2024-01-20T14:30:00Z",
   "updated_at": "2024-01-20T14:30:00Z"
 }
 ```
 
+**Image Features:**
+
+- Automatic upload to Cloudinary
+- Image optimization (max 1000x1000px)
+- Auto quality and format selection
+- Secure HTTPS URLs
+- Images stored in `health-store/products` folder
+
 **Error Responses:**
 
-- `400` - Validation error
+- `400` - Validation error or invalid image
 - `401` - Not authenticated
 - `403` - Insufficient permissions (not admin)
+- `500` - Image upload failed
 
 ---
 
@@ -372,6 +531,10 @@ PUT /admin/products/:id
 
 **Authentication:** Required (Admin role)
 
+**Content Type:** `application/json` OR `multipart/form-data`
+
+#### Option 1: JSON Request
+
 **Request Body:** (All fields optional - partial update supported)
 
 ```json
@@ -380,6 +543,32 @@ PUT /admin/products/:id
   "price": 24.99,
   "stock": 200
 }
+```
+
+#### Option 2: Multipart Form Data (with Image Upload)
+
+Upload a new image to replace the existing one. The old image will be automatically deleted from Cloudinary.
+
+**Form Fields:** (All optional)
+
+| Field         | Type | Description                         |
+| ------------- | ---- | ----------------------------------- |
+| `category_id` | Text | New category ID                     |
+| `name`        | Text | New product name                    |
+| `description` | Text | New description                     |
+| `price`       | Text | New price                           |
+| `stock`       | Text | New stock quantity                  |
+| `image`       | File | New image file (replaces old image) |
+
+**Postman Example:**
+
+```
+PUT http://localhost:8080/admin/products/15
+Authorization: Bearer YOUR_TOKEN
+Body: form-data
+  - name (Text): Updated Product Name
+  - price (Text): 24.99
+  - image (File): Select new image file
 ```
 
 **Success Response (200):**
@@ -392,11 +581,16 @@ PUT /admin/products/:id
   "description": "Premium omega-3 supplement for heart health",
   "price": 24.99,
   "stock": 200,
-  "image_url": "https://example.com/images/omega3.jpg",
+  "image_url": "https://res.cloudinary.com/your-cloud/image/upload/v1234567890/health-store/products/new_image.jpg",
   "created_at": "2024-01-20T14:30:00Z",
   "updated_at": "2024-01-21T09:15:00Z"
 }
 ```
+
+**Notes:**
+
+- When uploading a new image, the old image is automatically deleted from Cloudinary
+- Partial updates are supported - only send fields you want to change
 
 ---
 
@@ -415,6 +609,11 @@ DELETE /admin/products/:id
   "message": "Product deleted successfully"
 }
 ```
+
+**Notes:**
+
+- Automatically deletes the associated image from Cloudinary
+- This operation cannot be undone
 
 **Frontend Example:**
 
@@ -887,6 +1086,71 @@ GET /orders/:id
 
 ---
 
+### Generate Purchase Receipt PDF
+
+```http
+GET /orders/:id/receipt
+```
+
+**Authentication:** Required (Customer or Admin)
+
+**Success Response (200):**
+
+Returns a PDF file for download containing:
+
+- Customer Information (Name, Address, Contact Number)
+- Order Information (Date, Payment Method)
+- Purchased Items Table (Product ID, Product Name, Quantity, Price)
+- Total Amount
+
+**Response Headers:**
+
+```
+Content-Type: application/pdf
+Content-Disposition: attachment; filename=purchase-receipt-{order_id}.pdf
+```
+
+**Notes:**
+
+- Customers can only generate receipts for their own orders
+- Admins can generate receipts for any order
+- PDF includes all order details formatted professionally
+
+**Frontend Example:**
+
+```javascript
+async function downloadReceipt(orderId) {
+  const token = localStorage.getItem("authToken");
+  const response = await fetch(
+    `http://localhost:8080/orders/${orderId}/receipt`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error);
+  }
+
+  // Download the PDF
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `purchase-receipt-${orderId}.pdf`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+```
+
+---
+
 ### Cancel Order
 
 ```http
@@ -1183,6 +1447,427 @@ DELETE /admin/users/:id
 
 ---
 
+## Shop Management
+
+### Create Shop Request (Admin Only)
+
+```http
+POST /admin/shop-requests
+```
+
+**Authentication:** Required (Admin role)
+
+**Request Body:**
+
+```json
+{
+  "shop_name": "Medical Supplies Store",
+  "description": "Professional medical equipment supplier"
+}
+```
+
+**Validation Rules:**
+
+- `shop_name`: 3-100 characters
+- `description`: 10-500 characters
+
+**Success Response (200):**
+
+```json
+{
+  "message": "Shop request submitted successfully",
+  "request": {
+    "id": 1,
+    "user_id": 2,
+    "shop_name": "Medical Supplies Store",
+    "description": "Professional medical equipment supplier",
+    "status": "pending",
+    "created_at": "2024-01-25T10:00:00Z",
+    "updated_at": "2024-01-25T10:00:00Z"
+  }
+}
+```
+
+**Notes:**
+
+- Admin creates shop requests for themselves
+- No restrictions on creating multiple shop requests
+- Initial status is "pending"
+
+---
+
+### Get All Shop Requests (Admin Only)
+
+```http
+GET /admin/shop-requests
+```
+
+**Authentication:** Required (Admin role)
+
+**Query Parameters:**
+
+- `status` (string, optional) - Filter by status: `pending`, `approved`, or `rejected`
+
+**Success Response (200):**
+
+```json
+[
+  {
+    "id": 1,
+    "user_id": 2,
+    "username": "admin_user",
+    "email": "admin@example.com",
+    "shop_name": "Medical Supplies Store",
+    "description": "Professional medical equipment supplier",
+    "status": "pending",
+    "rejection_reason": "",
+    "created_at": "2024-01-25T10:00:00Z",
+    "updated_at": "2024-01-25T10:00:00Z"
+  }
+]
+```
+
+**Frontend Example:**
+
+```javascript
+async function getShopRequests(status = null) {
+  const token = localStorage.getItem("authToken");
+  const url = status
+    ? `http://localhost:8080/admin/shop-requests?status=${status}`
+    : "http://localhost:8080/admin/shop-requests";
+
+  const response = await fetch(url, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return await response.json();
+}
+```
+
+---
+
+### Get Shop Request by ID (Admin Only)
+
+```http
+GET /admin/shop-requests/:id
+```
+
+**Authentication:** Required (Admin role)
+
+**Success Response (200):**
+
+```json
+{
+  "id": 1,
+  "user_id": 2,
+  "username": "admin_user",
+  "email": "admin@example.com",
+  "shop_name": "Medical Supplies Store",
+  "description": "Professional medical equipment supplier",
+  "status": "pending",
+  "rejection_reason": "",
+  "created_at": "2024-01-25T10:00:00Z",
+  "updated_at": "2024-01-25T10:00:00Z"
+}
+```
+
+---
+
+### Approve Shop Request (Admin Only)
+
+```http
+PUT /admin/shop-requests/:id/approve
+```
+
+**Authentication:** Required (Admin role)
+
+**Success Response (200):**
+
+```json
+{
+  "message": "Shop request approved successfully"
+}
+```
+
+**Notes:**
+
+- Automatically creates a Shop when approved
+- Changes request status to "approved"
+- Users can have multiple approved shops
+
+**Frontend Example:**
+
+```javascript
+async function approveShopRequest(requestId) {
+  const token = localStorage.getItem("authToken");
+  const response = await fetch(
+    `http://localhost:8080/admin/shop-requests/${requestId}/approve`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return await response.json();
+}
+```
+
+---
+
+### Reject Shop Request (Admin Only)
+
+```http
+PUT /admin/shop-requests/:id/reject
+```
+
+**Authentication:** Required (Admin role)
+
+**Request Body:** (Optional)
+
+```json
+{
+  "rejection_reason": "Incomplete information provided"
+}
+```
+
+**Success Response (200):**
+
+```json
+{
+  "message": "Shop request rejected successfully"
+}
+```
+
+**Notes:**
+
+- Body is optional - can reject without providing a reason
+- Changes request status to "rejected"
+
+**Frontend Example:**
+
+```javascript
+async function rejectShopRequest(requestId, reason = "") {
+  const token = localStorage.getItem("authToken");
+  const response = await fetch(
+    `http://localhost:8080/admin/shop-requests/${requestId}/reject`,
+    {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: reason ? JSON.stringify({ rejection_reason: reason }) : undefined,
+    }
+  );
+  return await response.json();
+}
+```
+
+---
+
+### Get All Shops (Public)
+
+```http
+GET /shops
+```
+
+**Authentication:** Not required
+
+**Success Response (200):**
+
+```json
+[
+  {
+    "id": 1,
+    "user_id": 2,
+    "user": {
+      "id": 2,
+      "username": "admin_user",
+      "email": "admin@example.com"
+    },
+    "shop_name": "Medical Supplies Store",
+    "description": "Professional medical equipment supplier",
+    "is_active": true,
+    "created_at": "2024-01-25T10:30:00Z",
+    "updated_at": "2024-01-25T10:30:00Z"
+  }
+]
+```
+
+---
+
+## GuestBook
+
+### Create GuestBook Entry (Public)
+
+```http
+POST /guestbook
+```
+
+**Authentication:** Not required (Public endpoint)
+
+**Request Body:**
+
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "message": "Great store! Very helpful staff and excellent products."
+}
+```
+
+**Validation Rules:**
+
+- `name`: 2-100 characters
+- `email`: Valid email format
+- `message`: 10-1000 characters
+
+**Success Response (200):**
+
+```json
+{
+  "message": "Guestbook entry created successfully",
+  "entry": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "message": "Great store! Very helpful staff and excellent products.",
+    "created_at": "2024-01-25T11:00:00Z"
+  }
+}
+```
+
+**Frontend Example:**
+
+```javascript
+async function createGuestbookEntry(name, email, message) {
+  const response = await fetch("http://localhost:8080/guestbook", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ name, email, message }),
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error);
+  }
+
+  return await response.json();
+}
+```
+
+---
+
+### Get All GuestBook Entries (Admin Only)
+
+```http
+GET /admin/guestbook
+```
+
+**Authentication:** Required (Admin role)
+
+**Success Response (200):**
+
+```json
+{
+  "entries": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "message": "Great store! Very helpful staff and excellent products.",
+      "created_at": "2024-01-25T11:00:00Z"
+    },
+    {
+      "id": 2,
+      "name": "Jane Smith",
+      "email": "jane@example.com",
+      "message": "Excellent service and fast delivery!",
+      "created_at": "2024-01-25T12:00:00Z"
+    }
+  ],
+  "count": 2
+}
+```
+
+**Frontend Example:**
+
+```javascript
+async function getGuestbookEntries() {
+  const token = localStorage.getItem("authToken");
+  const response = await fetch("http://localhost:8080/admin/guestbook", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return await response.json();
+}
+```
+
+---
+
+### Get GuestBook Entry by ID (Admin Only)
+
+```http
+GET /admin/guestbook/:id
+```
+
+**Authentication:** Required (Admin role)
+
+**Success Response (200):**
+
+```json
+{
+  "id": 1,
+  "name": "John Doe",
+  "email": "john@example.com",
+  "message": "Great store! Very helpful staff and excellent products.",
+  "created_at": "2024-01-25T11:00:00Z"
+}
+```
+
+---
+
+### Delete GuestBook Entry (Admin Only)
+
+```http
+DELETE /admin/guestbook/:id
+```
+
+**Authentication:** Required (Admin role)
+
+**Success Response (200):**
+
+```json
+{
+  "message": "Guestbook entry deleted successfully"
+}
+```
+
+**Frontend Example:**
+
+```javascript
+async function deleteGuestbookEntry(entryId) {
+  const token = localStorage.getItem("authToken");
+  const response = await fetch(
+    `http://localhost:8080/admin/guestbook/${entryId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return await response.json();
+}
+```
+
+---
+
 ## Reports
 
 ### Generate Report (Admin Only)
@@ -1391,6 +2076,49 @@ interface Feedback {
   comment: string;
   rating: number; // 1-5
   createdAt: string;
+}
+```
+
+### Shop Request Model
+
+```typescript
+interface ShopRequest {
+  id: number;
+  user_id: number;
+  user?: User;
+  shop_name: string;
+  description: string;
+  status: "pending" | "approved" | "rejected";
+  rejection_reason?: string;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+### Shop Model
+
+```typescript
+interface Shop {
+  id: number;
+  user_id: number;
+  user?: User;
+  shop_name: string;
+  description: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+### GuestBook Model
+
+```typescript
+interface GuestBook {
+  id: number;
+  name: string;
+  email: string;
+  message: string;
+  created_at: string;
 }
 ```
 
@@ -1779,7 +2507,19 @@ curl http://localhost:8080/cart/ \
 
 ## Changelog
 
-### Version 1.0 (Current)
+### Version 1.1 (Current)
+
+- Added Shop Management system
+  - Admin can create shop requests
+  - Admin can approve/reject shop requests
+  - Public endpoint to view all shops
+  - Support for multiple shops per user
+- Added GuestBook system
+  - Public endpoint for visitors to create entries
+  - Admin can view and delete guestbook entries
+- Enhanced permissions system for new features
+
+### Version 1.0
 
 - Initial API release
 - User authentication with JWT
