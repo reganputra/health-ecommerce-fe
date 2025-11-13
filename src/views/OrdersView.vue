@@ -43,6 +43,14 @@
 
         <div class="order-actions">
           <button
+            v-if="canDownloadReceipt(order.status)"
+            @click.stop="downloadReceipt(order.id)"
+            class="btn-receipt"
+            :disabled="downloadingReceipt === order.id"
+          >
+            {{ downloadingReceipt === order.id ? 'Downloading...' : '📄 Download Receipt' }}
+          </button>
+          <button
             v-if="order.status === 'pending' || order.status === 'paid'"
             @click.stop="cancelOrder(order.id)"
             class="btn-cancel"
@@ -69,6 +77,7 @@ const orders = ref([])
 const loading = ref(false)
 const error = ref(null)
 const cancelingOrder = ref(null)
+const downloadingReceipt = ref(null)
 
 onMounted(async () => {
   await fetchOrders()
@@ -115,6 +124,13 @@ function viewOrder(id) {
   router.push(`/orders/${id}`)
 }
 
+function canDownloadReceipt(status) {
+  // Receipt is available for paid, shipped, and delivered orders
+  // Not available for pending (not yet paid) or cancelled orders
+  const allowedStatuses = ['paid', 'shipped', 'delivered']
+  return allowedStatuses.includes(status)
+}
+
 async function cancelOrder(id) {
   if (!confirm('Are you sure you want to cancel this order?')) {
     return
@@ -129,6 +145,18 @@ async function cancelOrder(id) {
     notifyError(err.message)
   } finally {
     cancelingOrder.value = null
+  }
+}
+
+async function downloadReceipt(id) {
+  try {
+    downloadingReceipt.value = id
+    await api.downloadOrderReceipt(id)
+    success('Receipt downloaded successfully')
+  } catch (err) {
+    notifyError(err.message || 'Failed to download receipt')
+  } finally {
+    downloadingReceipt.value = null
   }
 }
 </script>
@@ -258,6 +286,28 @@ h1 {
 .order-actions {
   display: flex;
   justify-content: flex-end;
+  gap: 12px;
+}
+
+.btn-receipt {
+  padding: 8px 16px;
+  background: #e3f2fd;
+  color: #0277bd;
+  border: 1px solid #bbdefb;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-receipt:hover:not(:disabled) {
+  background: #bbdefb;
+}
+
+.btn-receipt:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .btn-cancel {

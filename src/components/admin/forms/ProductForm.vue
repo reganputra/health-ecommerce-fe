@@ -93,11 +93,13 @@ const form = ref({
 
 const imagePreview = ref(null)
 const imageInput = ref(null)
+const selectedImageFile = ref(null) // Store the actual File object
 
 watch(() => props.product, (newProduct) => {
   if (newProduct) {
     form.value = { ...newProduct }
     imagePreview.value = newProduct.image_url || null
+    selectedImageFile.value = null // Clear file when editing existing product
   } else {
     resetForm()
   }
@@ -106,10 +108,13 @@ watch(() => props.product, (newProduct) => {
 function handleImageUpload(event) {
   const file = event.target.files[0]
   if (file) {
+    // Store the actual File object
+    selectedImageFile.value = file
+
+    // Create preview URL
     const reader = new FileReader()
     reader.onload = (e) => {
       imagePreview.value = e.target.result
-      form.value.image_url = e.target.result
     }
     reader.readAsDataURL(file)
   }
@@ -117,6 +122,7 @@ function handleImageUpload(event) {
 
 function clearImage() {
   imagePreview.value = null
+  selectedImageFile.value = null
   form.value.image_url = ''
   if (imageInput.value) {
     imageInput.value.value = ''
@@ -124,7 +130,12 @@ function clearImage() {
 }
 
 function handleSubmit() {
-  emit('save', { ...form.value })
+  // Include the File object if a new image was selected
+  const dataToSave = {
+    ...form.value,
+    imageFile: selectedImageFile.value // Add the File object
+  }
+  emit('save', dataToSave)
   handleClose()
 }
 
@@ -143,6 +154,7 @@ function resetForm() {
     image_url: '',
   }
   imagePreview.value = null
+  selectedImageFile.value = null
   if (imageInput.value) {
     imageInput.value.value = ''
   }

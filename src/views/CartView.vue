@@ -2,15 +2,22 @@
   <div class="cart-view">
     <h1>Shopping Cart</h1>
 
-    <div v-if="cartStore.loading" class="loading">Loading cart...</div>
+    <div v-if="cartStore.loading" class="loading">
+      <div class="spinner"></div>
+      <p>Loading your cart...</p>
+    </div>
 
     <div v-else-if="cartStore.error" class="error">
-      {{ cartStore.error }}
+      <div class="error-icon">⚠️</div>
+      <p>{{ cartStore.error }}</p>
+      <button @click="cartStore.fetchCart()" class="btn-secondary">Try Again</button>
     </div>
 
     <div v-else-if="!cartStore.cart || cartStore.cart.items.length === 0" class="empty-cart">
-      <p>Your cart is empty</p>
-      <button @click="goToProducts" class="btn-primary">Continue Shopping</button>
+      <div class="empty-icon">🛒</div>
+      <h2>Your cart is empty</h2>
+      <p>Looks like you haven't added any items to your cart yet.</p>
+      <button @click="goToProducts" class="btn-primary">Start Shopping</button>
     </div>
 
     <div v-else class="cart-content">
@@ -121,27 +128,88 @@ h1 {
   color: #333;
 }
 
-.loading,
-.error {
+.loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 120px 20px;
   text-align: center;
-  padding: 60px 20px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loading p {
   font-size: 18px;
   color: #666;
+  margin: 0;
 }
 
 .error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+  background: #fff5f5;
+  border-radius: 12px;
+  border: 2px dashed #fcc;
+}
+
+.error-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+
+.error p {
   color: #c33;
+  font-size: 18px;
+  margin: 0 0 24px 0;
 }
 
 .empty-cart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 100px 20px;
   text-align: center;
-  padding: 80px 20px;
+  background: linear-gradient(135deg, #f5f7ff 0%, #fef5ff 100%);
+  border-radius: 16px;
+  border: 2px dashed #d0d7ff;
+}
+
+.empty-icon {
+  font-size: 120px;
+  margin-bottom: 24px;
+  opacity: 0.8;
+}
+
+.empty-cart h2 {
+  font-size: 28px;
+  color: #333;
+  margin: 0 0 12px 0;
 }
 
 .empty-cart p {
-  font-size: 20px;
+  font-size: 16px;
   color: #666;
-  margin-bottom: 24px;
+  margin: 0 0 32px 0;
+  max-width: 400px;
 }
 
 .cart-content {

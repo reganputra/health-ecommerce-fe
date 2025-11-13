@@ -53,6 +53,14 @@
 
           <div class="feedback-section">
             <h2>Customer Reviews</h2>
+            <div v-if="feedbacks.length > 0" class="rating-summary">
+              <div class="average-rating">
+                <span class="rating-value">{{ averageRating }}</span>
+                <span class="rating-stars">{{ averageStars }}</span>
+                <span class="review-count">{{ feedbacks.length }} {{ feedbacks.length === 1 ? 'review' : 'reviews' }}</span>
+              </div>
+            </div>
+
             <button @click="showFeedbackForm = !showFeedbackForm" class="btn-secondary">
               {{ showFeedbackForm ? 'Cancel' : 'Write a Review' }}
             </button>
@@ -77,6 +85,23 @@
                 {{ submittingFeedback ? 'Submitting...' : 'Submit Review' }}
               </button>
             </div>
+
+            <div class="reviews-list">
+              <div v-if="loadingFeedbacks" class="loading-reviews">Loading reviews...</div>
+              <div v-else-if="feedbacks.length === 0" class="no-reviews">
+                No reviews yet. Be the first to review this product!
+              </div>
+              <div v-else class="review-items">
+                <div v-for="feedback in feedbacks" :key="feedback.id" class="review-item">
+                  <div class="review-header">
+                    <span class="reviewer-name">{{ feedback.user.username }}</span>
+                    <span class="review-rating">{{ '★'.repeat(feedback.rating) }}{{ '☆'.repeat(5 - feedback.rating) }}</span>
+                  </div>
+                  <p class="review-comment">{{ feedback.comment }}</p>
+                  <span class="review-date">{{ formatDate(feedback.createdAt) }}</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -85,7 +110,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useProductsStore } from '@/stores/products'
 import { useCartStore } from '@/stores/cart'
@@ -107,14 +132,32 @@ const quantity = ref(1)
 const addingToCart = ref(false)
 const showFeedbackForm = ref(false)
 const submittingFeedback = ref(false)
+const feedbacks = ref([])
+const loadingFeedbacks = ref(false)
 
 const feedbackForm = ref({
   comment: '',
   rating: 5,
 })
 
+const averageRating = computed(() => {
+  if (feedbacks.value.length === 0) return 0
+  const sum = feedbacks.value.reduce((acc, f) => acc + f.rating, 0)
+  return (sum / feedbacks.value.length).toFixed(1)
+})
+
+const averageStars = computed(() => {
+  const rating = parseFloat(averageRating.value)
+  const fullStars = Math.floor(rating)
+  const hasHalfStar = rating % 1 >= 0.5
+  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0)
+
+  return '★'.repeat(fullStars) + (hasHalfStar ? '⯨' : '') + '☆'.repeat(emptyStars)
+})
+
 onMounted(async () => {
   await fetchProduct()
+  await fetchFeedbacks()
 })
 
 async function fetchProduct() {
@@ -156,6 +199,19 @@ async function addToCart() {
   }
 }
 
+async function fetchFeedbacks() {
+  try {
+    loadingFeedbacks.value = true
+    const data = await api.getProductFeedback(route.params.id)
+    feedbacks.value = data.feedbacks || []
+  } catch (err) {
+    console.error('Error loading feedbacks:', err)
+    feedbacks.value = []
+  } finally {
+    loadingFeedbacks.value = false
+  }
+}
+
 async function submitFeedback() {
   if (!authStore.isAuthenticated) {
     warning('Please login to submit a review')
@@ -179,11 +235,22 @@ async function submitFeedback() {
     feedbackForm.value.comment = ''
     feedbackForm.value.rating = 5
     showFeedbackForm.value = false
+    // Refresh feedbacks to show the new review
+    await fetchFeedbacks()
   } catch (err) {
     notifyError(err.message)
   } finally {
     submittingFeedback.value = false
   }
+}
+
+function formatDate(dateString) {
+  const date = new Date(dateString)
+  return date.toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
 }
 </script>
 
@@ -385,6 +452,87 @@ async function submitFeedback() {
   border: 1px solid #ddd;
   border-radius: 6px;
   font-size: 14px;
+}
+
+.rating-summary {
+  background: #f9f9f9;
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+}
+
+.average-rating {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rating-value {
+  font-size: 36px;
+  font-weight: 700;
+  color: #667eea;
+}
+
+.rating-stars {
+  color: #ffc107;
+  font-size: 24px;
+}
+
+.review-count {
+  color: #666;
+  font-size: 14px;
+}
+
+.reviews-list {
+  margin-top: 24px;
+}
+
+.loading-reviews,
+.no-reviews {
+  text-align: center;
+  padding: 32px;
+  color: #666;
+}
+
+.review-items {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.review-item {
+  padding: 16px;
+  background: white;
+  border: 1px solid #eee;
+  border-radius: 8px;
+}
+
+.review-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.reviewer-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.review-rating {
+  color: #ffc107;
+  font-size: 16px;
+}
+
+.review-comment {
+  color: #555;
+  line-height: 1.6;
+  margin: 8px 0;
+}
+
+.review-date {
+  font-size: 12px;
+  color: #999;
 }
 
 @media (max-width: 768px) {
