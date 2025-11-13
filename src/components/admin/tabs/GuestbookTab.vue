@@ -1,15 +1,18 @@
 <template>
-  <div>
-    <Card>
+  <div class="space-y-6">
+    <div class="bg-white rounded-lg shadow-md p-6">
       <div class="flex justify-between items-center mb-6">
-        <Title>GuestBook Entries</Title>
-        <Button @click="loadEntries" :loading="isLoading">
+        <h2 class="text-2xl font-bold text-gray-900">GuestBook Entries</h2>
+        <button
+          @click="loadEntries"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+        >
           Refresh
-        </Button>
+        </button>
       </div>
 
       <div v-if="isLoading" class="text-center py-8">
-        <Spinner />
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
 
       <div v-else-if="entries.length === 0" class="text-center py-8 text-gray-500">
@@ -34,12 +37,15 @@
 
           <p class="text-gray-700 mb-4 leading-relaxed">{{ entry.message }}</p>
 
-          <Button @click="deleteEntry(entry.id)" variant="danger" size="sm">
+          <button
+            @click="deleteEntry(entry.id)"
+            class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
+          >
             Delete
-          </Button>
+          </button>
         </div>
       </div>
-    </Card>
+    </div>
   </div>
 </template>
 
@@ -47,10 +53,6 @@
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
 import { useNotification, useConfirm } from '@/composables'
-import Card from '@/components/ui/Card.vue'
-import Title from '@/components/ui/Title.vue'
-import Button from '@/components/ui/Button.vue'
-import Spinner from '@/components/ui/Spinner.vue'
 
 const { showNotification } = useNotification()
 const { confirm } = useConfirm()

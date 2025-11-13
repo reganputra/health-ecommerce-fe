@@ -1,7 +1,7 @@
 <template>
-  <div>
-    <Card>
-      <Title>Manage Shops</Title>
+  <div class="space-y-6">
+    <div class="bg-white rounded-lg shadow-md p-6">
+      <h2 class="text-2xl font-bold text-gray-900 mb-6">Manage Shops</h2>
 
       <div class="mb-6 flex gap-4">
         <select
@@ -14,13 +14,17 @@
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
         </select>
-        <Button @click="loadRequests" :loading="isLoading">
-          Refresh
-        </Button>
+        <button
+          @click="loadRequests"
+          :disabled="isLoading"
+          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+        >
+          {{ isLoading ? 'Loading...' : 'Refresh' }}
+        </button>
       </div>
 
       <div v-if="isLoading" class="text-center py-8">
-        <Spinner />
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
 
       <div v-else-if="requests.length === 0" class="text-center py-8 text-gray-500">
@@ -28,62 +32,68 @@
       </div>
 
       <div v-else class="overflow-x-auto">
-        <Table>
-          <TableHead>
-            <TableRow>
-              <TableHeader>Shop Name</TableHeader>
-              <TableHeader>Admin</TableHeader>
-              <TableHeader>Status</TableHeader>
-              <TableHeader>Actions</TableHeader>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            <TableRow v-for="request in requests" :key="request.id">
-              <TableCell>
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Shop Name</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Admin</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr v-for="request in requests" :key="request.id">
+              <td class="px-6 py-4 whitespace-nowrap">
                 <div>
                   <p class="font-semibold text-gray-900">{{ request.shop_name }}</p>
                   <p class="text-xs text-gray-600">{{ request.description }}</p>
                 </div>
-              </TableCell>
-              <TableCell>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
                 <div>
                   <p class="font-medium">{{ request.username }}</p>
                   <p class="text-xs text-gray-600">{{ request.email }}</p>
                 </div>
-              </TableCell>
-              <TableCell>
-                <Badge :variant="statusVariant(request.status)">
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
+                <span
+                  :class="statusClass(request.status)"
+                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+                >
                   {{ request.status.charAt(0).toUpperCase() + request.status.slice(1) }}
-                </Badge>
-              </TableCell>
-              <TableCell>
+                </span>
+              </td>
+              <td class="px-6 py-4 whitespace-nowrap">
                 <div class="flex gap-2">
-                  <Button
+                  <button
                     v-if="request.status === 'pending'"
                     @click="approveRequest(request.id)"
-                    variant="success"
-                    size="sm"
+                    class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
                   >
                     Approve
-                  </Button>
-                  <Button
+                  </button>
+                  <button
                     v-if="request.status === 'pending'"
                     @click="showRejectModal(request.id)"
-                    variant="danger"
-                    size="sm"
+                    class="px-3 py-1 bg-red-600 text-white text-sm rounded hover:bg-red-700"
                   >
                     Reject
-                  </Button>
+                  </button>
                 </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-    </Card>
+    </div>
 
-    <Modal :show="showReject" @close="showReject = false">
-      <div class="p-6">
+    <!-- Reject Modal -->
+    <div
+      v-if="showReject"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      @click.self="showReject = false"
+    >
+      <div class="bg-white rounded-lg p-6 max-w-md w-full">
         <h3 class="text-xl font-bold text-gray-900 mb-4">Reject Request</h3>
         <textarea
           v-model="rejectionReason"
@@ -114,20 +124,6 @@
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
 import { useNotification } from '@/composables/useNotification'
-import Card from '@/components/ui/Card.vue'
-import Title from '@/components/ui/Title.vue'
-import Button from '@/components/ui/Button.vue'
-import Spinner from '@/components/ui/Spinner.vue'
-import {
-  Table,
-  TableHead,
-  TableRow,
-  TableHeader,
-  TableBody,
-  TableCell,
-} from '@/components/ui/Table.vue'
-import Badge from '@/components/ui/Badge.vue'
-import Modal from '@/components/ui/Modal.vue'
 
 const { showNotification } = useNotification()
 
@@ -184,16 +180,16 @@ async function rejectRequest() {
   }
 }
 
-function statusVariant(status) {
+function statusClass(status) {
   switch (status) {
     case 'pending':
-      return 'warning'
+      return 'bg-yellow-100 text-yellow-800'
     case 'approved':
-      return 'success'
+      return 'bg-green-100 text-green-800'
     case 'rejected':
-      return 'danger'
+      return 'bg-red-100 text-red-800'
     default:
-      return 'secondary'
+      return 'bg-gray-100 text-gray-800'
   }
 }
 </script>
