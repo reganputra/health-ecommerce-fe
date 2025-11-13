@@ -1,29 +1,26 @@
 <template>
-  <div class="space-y-6">
-    <div class="bg-white rounded-lg shadow-md p-6">
-      <h2 class="text-2xl font-bold text-gray-900 mb-6">Manage Shops</h2>
+  <div>
+    <Card>
+      <Title>Manage Shops</Title>
 
       <div class="mb-6 flex gap-4">
         <select
           v-model="selectedStatus"
           class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          @change="loadRequests"
         >
           <option value="">All Requests</option>
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
           <option value="rejected">Rejected</option>
         </select>
-
-        <button
-          @click="loadRequests"
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
+        <Button @click="loadRequests" :loading="isLoading">
           Refresh
-        </button>
+        </Button>
       </div>
 
       <div v-if="isLoading" class="text-center py-8">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <Spinner />
       </div>
 
       <div v-else-if="requests.length === 0" class="text-center py-8 text-gray-500">
@@ -31,67 +28,62 @@
       </div>
 
       <div v-else class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-100 border-b">
-            <tr>
-              <th class="px-4 py-3 text-left font-semibold">Shop Name</th>
-              <th class="px-4 py-3 text-left font-semibold">Admin</th>
-              <th class="px-4 py-3 text-left font-semibold">Status</th>
-              <th class="px-4 py-3 text-left font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="request in requests" :key="request.id" class="border-b hover:bg-gray-50">
-              <td class="px-4 py-3">
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableHeader>Shop Name</TableHeader>
+              <TableHeader>Admin</TableHeader>
+              <TableHeader>Status</TableHeader>
+              <TableHeader>Actions</TableHeader>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            <TableRow v-for="request in requests" :key="request.id">
+              <TableCell>
                 <div>
                   <p class="font-semibold text-gray-900">{{ request.shop_name }}</p>
                   <p class="text-xs text-gray-600">{{ request.description }}</p>
                 </div>
-              </td>
-              <td class="px-4 py-3">
+              </TableCell>
+              <TableCell>
                 <div>
                   <p class="font-medium">{{ request.username }}</p>
                   <p class="text-xs text-gray-600">{{ request.email }}</p>
                 </div>
-              </td>
-              <td class="px-4 py-3">
-                <span
-                  :class="[
-                    'inline-block px-3 py-1 rounded-full text-xs font-semibold',
-                    request.status === 'pending' && 'bg-yellow-100 text-yellow-800',
-                    request.status === 'approved' && 'bg-green-100 text-green-800',
-                    request.status === 'rejected' && 'bg-red-100 text-red-800',
-                  ]"
-                >
+              </TableCell>
+              <TableCell>
+                <Badge :variant="statusVariant(request.status)">
                   {{ request.status.charAt(0).toUpperCase() + request.status.slice(1) }}
-                </span>
-              </td>
-              <td class="px-4 py-3">
+                </Badge>
+              </TableCell>
+              <TableCell>
                 <div class="flex gap-2">
-                  <button
+                  <Button
                     v-if="request.status === 'pending'"
                     @click="approveRequest(request.id)"
-                    class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
+                    variant="success"
+                    size="sm"
                   >
                     Approve
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     v-if="request.status === 'pending'"
                     @click="showRejectModal(request.id)"
-                    class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
+                    variant="danger"
+                    size="sm"
                   >
                     Reject
-                  </button>
+                  </Button>
                 </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </TableCell>
+            </TableRow>
+          </TableBody>
+        </Table>
       </div>
-    </div>
+    </Card>
 
-    <div v-if="showReject" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
+    <Modal :show="showReject" @close="showReject = false">
+      <div class="p-6">
         <h3 class="text-xl font-bold text-gray-900 mb-4">Reject Request</h3>
         <textarea
           v-model="rejectionReason"
@@ -122,6 +114,20 @@
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
 import { useNotification } from '@/composables/useNotification'
+import Card from '@/components/ui/Card.vue'
+import Title from '@/components/ui/Title.vue'
+import Button from '@/components/ui/Button.vue'
+import Spinner from '@/components/ui/Spinner.vue'
+import {
+  Table,
+  TableHead,
+  TableRow,
+  TableHeader,
+  TableBody,
+  TableCell,
+} from '@/components/ui/Table.vue'
+import Badge from '@/components/ui/Badge.vue'
+import Modal from '@/components/ui/Modal.vue'
 
 const { showNotification } = useNotification()
 
@@ -175,6 +181,19 @@ async function rejectRequest() {
   } catch (error) {
     showNotification('Error rejecting request', 'error')
     console.error(error)
+  }
+}
+
+function statusVariant(status) {
+  switch (status) {
+    case 'pending':
+      return 'warning'
+    case 'approved':
+      return 'success'
+    case 'rejected':
+      return 'danger'
+    default:
+      return 'secondary'
   }
 }
 </script>

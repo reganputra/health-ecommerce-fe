@@ -13,7 +13,7 @@
         </p>
       </div>
 
-      <div class="grid md:grid-cols-2 gap-8">
+      <div class="max-w-xl mx-auto">
         <div class="bg-white rounded-xl shadow-xl p-8 hover:shadow-2xl transition-shadow duration-300 border border-purple-100">
           <h2 class="text-2xl font-bold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">Leave Your Message</h2>
           <form @submit.prevent="submitEntry" class="space-y-4">
@@ -76,43 +76,14 @@
             </div>
           </form>
         </div>
-
-        <div class="bg-white rounded-xl shadow-xl p-8 hover:shadow-2xl transition-shadow duration-300 border border-blue-100">
-          <h2 class="text-2xl font-bold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">Recent Messages</h2>
-          <div class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-            <div v-if="entries.length === 0" class="text-center py-12 bg-linear-to-br from-purple-50 to-blue-50 rounded-lg border-2 border-purple-200 p-6">
-              <span class="text-5xl mb-4 block">💬</span>
-              <p class="text-gray-600 font-medium text-lg">No messages yet</p>
-              <p class="text-gray-500 text-sm mt-2">Be the first to leave a message!</p>
-            </div>
-
-            <div
-              v-for="entry in entries"
-              :key="entry.id"
-              class="border-l-4 border-linear-to-b from-purple-500 to-blue-500 bg-linear-to-r from-purple-50 to-blue-50 pl-4 py-3 rounded-r-lg hover:shadow-md transition-all duration-200"
-            >
-              <div class="flex justify-between items-start mb-1">
-                <h3 class="font-semibold text-gray-900">{{ entry.name }}</h3>
-                <span class="text-xs text-gray-500 bg-white px-2 py-1 rounded">
-                  {{ formatDate(entry.created_at) }}
-                </span>
-              </div>
-              <p class="text-sm text-gray-600 mb-2">{{ entry.email }}</p>
-              <p class="text-gray-700 leading-relaxed">{{ entry.message }}</p>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import api from '@/services/api'
-import { useNotification } from '@/composables/useNotification'
-
-const { showNotification } = useNotification()
 
 const form = ref({
   name: '',
@@ -120,21 +91,9 @@ const form = ref({
   message: '',
 })
 
-const entries = ref([])
 const isSubmitting = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
-
-onMounted(async () => {
-  try {
-    const response = await api.getGuestbookEntries()
-    if (response && Array.isArray(response)) {
-      entries.value = response
-    }
-  } catch (error) {
-    console.error('Error loading guestbook:', error)
-  }
-})
 
 async function submitEntry() {
   isSubmitting.value = true
@@ -151,12 +110,6 @@ async function submitEntry() {
     successMessage.value = 'Thank you! Your message has been submitted.'
     form.value = { name: '', email: '', message: '' }
 
-    // Reload entries to show the new message
-    const response = await api.getGuestbookEntries()
-    if (response && Array.isArray(response)) {
-      entries.value = response
-    }
-
     setTimeout(() => {
       successMessage.value = ''
     }, 5000)
@@ -165,14 +118,5 @@ async function submitEntry() {
   } finally {
     isSubmitting.value = false
   }
-}
-
-function formatDate(dateString) {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
 }
 </script>
