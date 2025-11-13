@@ -1,104 +1,153 @@
 <template>
-  <div class="min-h-screen bg-linear-to-br from-purple-50 via-blue-50 to-pink-50 py-12">
-    <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div class="text-center mb-12">
-        <div class="mb-4">
-          <span class="text-6xl">📖</span>
+  <div class="guestbook-page">
+    <!-- Hero Section -->
+    <div class="hero-section">
+      <div class="hero-content">
+        <div class="icon-wrapper">
+          <div class="icon-bg"></div>
+          <span class="hero-icon">📖</span>
         </div>
-        <h1 class="text-6xl font-extrabold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-4 drop-shadow-sm">
-          GuestBook
+        <h1 class="hero-title">
+          <span class="gradient-text">Guest</span>book
         </h1>
-        <p class="text-xl text-gray-700 max-w-2xl mx-auto">
-          Share your experience with our Health Store community
+        <p class="hero-subtitle">
+          Share your thoughts, experiences, and feedback with our community
         </p>
       </div>
+      <div class="hero-decoration">
+        <div class="decoration-circle circle-1"></div>
+        <div class="decoration-circle circle-2"></div>
+        <div class="decoration-circle circle-3"></div>
+      </div>
+    </div>
 
-      <div class="grid md:grid-cols-2 gap-8">
-        <div class="bg-white rounded-xl shadow-xl p-8 hover:shadow-2xl transition-shadow duration-300 border border-purple-100">
-          <h2 class="text-2xl font-bold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">Leave Your Message</h2>
-          <form @submit.prevent="submitEntry" class="space-y-4">
-            <div>
-              <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+    <!-- Main Content -->
+    <div class="container">
+      <div class="content-grid">
+        <!-- Form Section -->
+        <div class="form-card">
+          <div class="card-header">
+            <div class="header-icon">✍️</div>
+            <h2 class="card-title">Leave Your Message</h2>
+            <p class="card-subtitle">We'd love to hear from you!</p>
+          </div>
+          <form @submit.prevent="submitEntry" class="guestbook-form">
+            <div class="form-group">
+              <label for="name" class="form-label">
+                <span class="label-icon">👤</span>
                 Your Name
               </label>
               <input
                 id="name"
                 v-model="form.name"
                 type="text"
-                placeholder="John Doe"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                placeholder="Enter your name"
+                class="form-input"
                 required
+                minlength="2"
+                maxlength="100"
               />
             </div>
 
-            <div>
-              <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+            <div class="form-group">
+              <label for="email" class="form-label">
+                <span class="label-icon">📧</span>
                 Email Address
               </label>
               <input
                 id="email"
                 v-model="form.email"
                 type="email"
-                placeholder="john@example.com"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                placeholder="your@email.com"
+                class="form-input"
                 required
               />
             </div>
 
-            <div>
-              <label for="message" class="block text-sm font-medium text-gray-700 mb-2">
+            <div class="form-group">
+              <label for="message" class="form-label">
+                <span class="label-icon">💬</span>
                 Your Message
               </label>
               <textarea
                 id="message"
                 v-model="form.message"
-                placeholder="Share your thoughts about our store..."
-                rows="5"
-                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none transition-all duration-200"
+                placeholder="Share your thoughts, experiences, or feedback..."
+                rows="6"
+                class="form-textarea"
                 required
+                minlength="10"
+                maxlength="1000"
               ></textarea>
+              <div class="character-count">
+                {{ form.message.length }} / 1000
+              </div>
             </div>
 
             <button
               type="submit"
               :disabled="isSubmitting"
-              class="w-full bg-linear-to-r from-purple-600 to-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+              class="submit-btn"
             >
-              {{ isSubmitting ? 'Submitting...' : 'Submit Message' }}
+              <span v-if="!isSubmitting" class="btn-content">
+                <span class="btn-icon">✨</span>
+                <span>Submit Message</span>
+              </span>
+              <span v-else class="btn-loading">
+                <span class="spinner"></span>
+                Submitting...
+              </span>
             </button>
 
-            <div v-if="successMessage" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-              {{ successMessage }}
-            </div>
+            <transition name="fade">
+              <div v-if="successMessage" class="alert alert-success">
+                <span class="alert-icon">✅</span>
+                {{ successMessage }}
+              </div>
+            </transition>
 
-            <div v-if="errorMessage" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              {{ errorMessage }}
-            </div>
+            <transition name="fade">
+              <div v-if="errorMessage" class="alert alert-error">
+                <span class="alert-icon">❌</span>
+                {{ errorMessage }}
+              </div>
+            </transition>
           </form>
         </div>
 
-        <div class="bg-white rounded-xl shadow-xl p-8 hover:shadow-2xl transition-shadow duration-300 border border-blue-100">
-          <h2 class="text-2xl font-bold bg-linear-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent mb-6">Recent Messages</h2>
-          <div class="space-y-4 max-h-[500px] overflow-y-auto pr-2">
-            <div v-if="entries.length === 0" class="text-center py-12 bg-linear-to-br from-purple-50 to-blue-50 rounded-lg border-2 border-purple-200 p-6">
-              <span class="text-5xl mb-4 block">💬</span>
-              <p class="text-gray-600 font-medium text-lg">No messages yet</p>
-              <p class="text-gray-500 text-sm mt-2">Be the first to leave a message!</p>
+        <!-- Messages Section -->
+        <div class="messages-card">
+          <div class="card-header">
+            <div class="header-icon">💭</div>
+            <h2 class="card-title">Recent Messages</h2>
+            <p class="card-subtitle">{{ entries.length }} {{ entries.length === 1 ? 'message' : 'messages' }}</p>
+          </div>
+
+          <div class="messages-container">
+            <div v-if="entries.length === 0" class="empty-state">
+              <div class="empty-icon">📝</div>
+              <p class="empty-title">No messages yet</p>
+              <p class="empty-subtitle">Be the first to share your thoughts!</p>
             </div>
 
             <div
               v-for="entry in entries"
               :key="entry.id"
-              class="border-l-4 border-linear-to-b from-purple-500 to-blue-500 bg-linear-to-r from-purple-50 to-blue-50 pl-4 py-3 rounded-r-lg hover:shadow-md transition-all duration-200"
+              class="message-item"
             >
-              <div class="flex justify-between items-start mb-1">
-                <h3 class="font-semibold text-gray-900">{{ entry.name }}</h3>
-                <span class="text-xs text-gray-500 bg-white px-2 py-1 rounded">
-                  {{ formatDate(entry.created_at) }}
-                </span>
+              <div class="message-avatar">
+                {{ getInitials(entry.name) }}
               </div>
-              <p class="text-sm text-gray-600 mb-2">{{ entry.email }}</p>
-              <p class="text-gray-700 leading-relaxed">{{ entry.message }}</p>
+              <div class="message-content">
+                <div class="message-header">
+                  <h3 class="message-name">{{ entry.name }}</h3>
+                  <span class="message-date">
+                    {{ formatDate(entry.created_at) }}
+                  </span>
+                </div>
+                <p class="message-email">{{ entry.email }}</p>
+                <p class="message-text">{{ entry.message }}</p>
+              </div>
             </div>
           </div>
         </div>
@@ -175,4 +224,481 @@ function formatDate(dateString) {
     year: 'numeric',
   })
 }
+
+function getInitials(name) {
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2)
+}
 </script>
+
+<style scoped>
+/* Hero Section */
+.guestbook-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-section {
+  position: relative;
+  padding: 60px 20px 40px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.icon-wrapper {
+  position: relative;
+  display: inline-block;
+  margin-bottom: 20px;
+}
+
+.icon-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.hero-icon {
+  font-size: 64px;
+  display: block;
+  position: relative;
+  z-index: 1;
+  animation: float 3s ease-in-out infinite;
+}
+
+.hero-title {
+  font-size: 72px;
+  font-weight: 800;
+  color: white;
+  margin-bottom: 16px;
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.gradient-text {
+  background: linear-gradient(to right, #ffd89b, #19547b);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero-subtitle {
+  font-size: 20px;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 400;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.hero-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.decoration-circle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.circle-1 {
+  width: 300px;
+  height: 300px;
+  top: -150px;
+  left: -150px;
+  animation: float 6s ease-in-out infinite;
+}
+
+.circle-2 {
+  width: 200px;
+  height: 200px;
+  top: 50%;
+  right: -100px;
+  animation: float 8s ease-in-out infinite reverse;
+}
+
+.circle-3 {
+  width: 150px;
+  height: 150px;
+  bottom: -75px;
+  left: 20%;
+  animation: float 7s ease-in-out infinite;
+}
+
+/* Main Content */
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  position: relative;
+  z-index: 1;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Card Styles */
+.form-card,
+.messages-card {
+  background: white;
+  border-radius: 24px;
+  padding: 40px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.form-card:hover,
+.messages-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
+}
+
+.card-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.header-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.card-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 8px;
+}
+
+.card-subtitle {
+  font-size: 16px;
+  color: #666;
+}
+
+/* Form Styles */
+.guestbook-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.form-group {
+  position: relative;
+}
+
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 8px;
+}
+
+.label-icon {
+  font-size: 18px;
+}
+
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 14px 18px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  font-size: 15px;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.character-count {
+  text-align: right;
+  font-size: 12px;
+  color: #999;
+  margin-top: 4px;
+}
+
+/* Submit Button */
+.submit-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 16px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+}
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-icon {
+  font-size: 20px;
+}
+
+.btn-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+/* Alerts */
+.alert {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.alert-icon {
+  font-size: 18px;
+}
+
+.alert-success {
+  background: #d1fae5;
+  color: #065f46;
+  border: 1px solid #6ee7b7;
+}
+
+.alert-error {
+  background: #fee2e2;
+  color: #991b1b;
+  border: 1px solid #fca5a5;
+}
+
+/* Messages Section */
+.messages-container {
+  max-height: 600px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.messages-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
+}
+
+.messages-container::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+}
+
+.messages-container::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.empty-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+  opacity: 0.6;
+}
+
+.empty-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #444;
+  margin-bottom: 8px;
+}
+
+.empty-subtitle {
+  font-size: 15px;
+  color: #999;
+}
+
+/* Message Item */
+.message-item {
+  display: flex;
+  gap: 16px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8f9ff 0%, #fff5f7 100%);
+  border-radius: 16px;
+  margin-bottom: 16px;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(102, 126, 234, 0.1);
+}
+
+.message-item:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+.message-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.message-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+  gap: 12px;
+}
+
+.message-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+  margin: 0;
+}
+
+.message-date {
+  font-size: 12px;
+  color: #999;
+  white-space: nowrap;
+  background: white;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+.message-email {
+  font-size: 13px;
+  color: #666;
+  margin: 0 0 12px 0;
+}
+
+.message-text {
+  font-size: 15px;
+  color: #444;
+  line-height: 1.6;
+  margin: 0;
+  word-wrap: break-word;
+}
+
+/* Animations */
+@keyframes pulse {
+  0%, 100% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.1);
+    opacity: 0.3;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+</style>

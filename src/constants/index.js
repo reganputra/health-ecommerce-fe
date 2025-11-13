@@ -72,6 +72,27 @@ export const REPORT_FORMATS = {
   EXCEL: 'excel',
 }
 
+// Shop Request Status
+export const SHOP_REQUEST_STATUS = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+}
+
+// Shop Request Status Labels
+export const SHOP_REQUEST_STATUS_LABELS = {
+  [SHOP_REQUEST_STATUS.PENDING]: 'Pending',
+  [SHOP_REQUEST_STATUS.APPROVED]: 'Approved',
+  [SHOP_REQUEST_STATUS.REJECTED]: 'Rejected',
+}
+
+// Shop Request Status Colors
+export const SHOP_REQUEST_STATUS_COLORS = {
+  [SHOP_REQUEST_STATUS.PENDING]: '#f59e0b',
+  [SHOP_REQUEST_STATUS.APPROVED]: '#10b981',
+  [SHOP_REQUEST_STATUS.REJECTED]: '#ef4444',
+}
+
 // API Endpoints (relative paths)
 export const API_ENDPOINTS = {
   // Auth
@@ -110,6 +131,20 @@ export const API_ENDPOINTS = {
   // Feedback
   FEEDBACK: '/feedback/',
   PRODUCT_FEEDBACK: (productId) => `/feedback/product/${productId}`,
+
+  // Shop Management
+  ADMIN_SHOP_REQUESTS: '/admin/shop-requests',
+  ADMIN_SHOP_REQUEST: (id) => `/admin/shop-requests/${id}`,
+  ADMIN_SHOP_REQUEST_APPROVE: (id) => `/admin/shop-requests/${id}/approve`,
+  ADMIN_SHOP_REQUEST_REJECT: (id) => `/admin/shop-requests/${id}/reject`,
+  SHOPS: '/shops',
+  SHOP: (id) => `/shops/${id}`,
+
+  // Guestbook
+  GUESTBOOK: '/guestbook',
+  GUESTBOOK_ENTRY: (id) => `/guestbook/${id}`,
+  ADMIN_GUESTBOOK: '/admin/guestbook',
+  ADMIN_GUESTBOOK_ENTRY: (id) => `/admin/guestbook/${id}`,
 }
 
 // Pagination

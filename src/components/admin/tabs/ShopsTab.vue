@@ -1,129 +1,113 @@
 <template>
-  <div class="space-y-6">
-    <div class="bg-white rounded-lg shadow-md p-6">
-      <h2 class="text-2xl font-bold text-gray-900 mb-6">Manage Shops</h2>
-
-      <div class="mb-6 flex gap-4">
-        <select
-          v-model="selectedStatus"
-          class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">All Requests</option>
-          <option value="pending">Pending</option>
-          <option value="approved">Approved</option>
-          <option value="rejected">Rejected</option>
-        </select>
-
-        <button
-          @click="loadRequests"
-          class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Refresh
-        </button>
-      </div>
-
-      <div v-if="isLoading" class="text-center py-8">
-        <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-
-      <div v-else-if="requests.length === 0" class="text-center py-8 text-gray-500">
-        No shop requests found.
-      </div>
-
-      <div v-else class="overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead class="bg-gray-100 border-b">
-            <tr>
-              <th class="px-4 py-3 text-left font-semibold">Shop Name</th>
-              <th class="px-4 py-3 text-left font-semibold">Admin</th>
-              <th class="px-4 py-3 text-left font-semibold">Status</th>
-              <th class="px-4 py-3 text-left font-semibold">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="request in requests" :key="request.id" class="border-b hover:bg-gray-50">
-              <td class="px-4 py-3">
-                <div>
-                  <p class="font-semibold text-gray-900">{{ request.shop_name }}</p>
-                  <p class="text-xs text-gray-600">{{ request.description }}</p>
-                </div>
-              </td>
-              <td class="px-4 py-3">
-                <div>
-                  <p class="font-medium">{{ request.username }}</p>
-                  <p class="text-xs text-gray-600">{{ request.email }}</p>
-                </div>
-              </td>
-              <td class="px-4 py-3">
-                <span
-                  :class="[
-                    'inline-block px-3 py-1 rounded-full text-xs font-semibold',
-                    request.status === 'pending' && 'bg-yellow-100 text-yellow-800',
-                    request.status === 'approved' && 'bg-green-100 text-green-800',
-                    request.status === 'rejected' && 'bg-red-100 text-red-800',
-                  ]"
-                >
-                  {{ request.status.charAt(0).toUpperCase() + request.status.slice(1) }}
-                </span>
-              </td>
-              <td class="px-4 py-3">
-                <div class="flex gap-2">
-                  <button
-                    v-if="request.status === 'pending'"
-                    @click="approveRequest(request.id)"
-                    class="px-3 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    v-if="request.status === 'pending'"
-                    @click="showRejectModal(request.id)"
-                    class="px-3 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
-                  >
-                    Reject
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+  <div class="shops-admin">
+    <div class="section-header">
+      <h2>Manage Shop Requests</h2>
+      <button @click="handleAdd" class="btn-primary">Add Shop Request</button>
     </div>
 
-    <div v-if="showReject" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div class="bg-white rounded-lg shadow-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-xl font-bold text-gray-900 mb-4">Reject Request</h3>
+    <div class="filters">
+      <select
+        v-model="selectedStatus"
+        @change="loadRequests"
+        class="filter-select"
+      >
+        <option value="">All Requests</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+      </select>
+    </div>
+
+    <DataTable
+      :columns="columns"
+      :data="requests"
+      :loading="isLoading"
+    >
+      <template #cell-shop_name="{ row }">
+        <div>
+          <p class="font-medium">{{ row.shop_name }}</p>
+          <p class="text-xs text-gray-500">{{ row.description }}</p>
+        </div>
+      </template>
+
+      <template #cell-username="{ row }">
+        <div>
+          <p class="font-medium">{{ row.username }}</p>
+          <p class="text-xs text-gray-500">{{ row.email }}</p>
+        </div>
+      </template>
+
+      <template #cell-status="{ value }">
+        <span
+          :class="[
+            'status-badge',
+            value === 'pending' && 'status-pending',
+            value === 'approved' && 'status-approved',
+            value === 'rejected' && 'status-rejected',
+          ]"
+        >
+          {{ value.charAt(0).toUpperCase() + value.slice(1) }}
+        </span>
+      </template>
+
+      <template #cell-actions="{ row }">
+        <div class="actions">
+          <button
+            v-if="row.status === 'pending'"
+            @click="approveRequest(row.id)"
+            class="btn-approve"
+          >
+            Approve
+          </button>
+          <button
+            v-if="row.status === 'pending'"
+            @click="showRejectModal(row.id)"
+            class="btn-reject"
+          >
+            Reject
+          </button>
+        </div>
+      </template>
+    </DataTable>
+
+    <!-- Reject Modal -->
+    <div v-if="showReject" class="modal-overlay" @click="showReject = false">
+      <div class="modal-content" @click.stop>
+        <h3 class="modal-title">Reject Shop Request</h3>
         <textarea
           v-model="rejectionReason"
           placeholder="Enter rejection reason (optional)"
           rows="4"
-          class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500"
+          class="modal-textarea"
         ></textarea>
-        <div class="flex gap-3">
-          <button
-            @click="rejectRequest"
-            class="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-          >
+        <div class="modal-actions">
+          <button @click="rejectRequest" class="btn-reject">
             Reject
           </button>
-          <button
-            @click="showReject = false"
-            class="flex-1 px-4 py-2 bg-gray-300 text-gray-900 rounded-lg hover:bg-gray-400"
-          >
+          <button @click="showReject = false" class="btn-cancel">
             Cancel
           </button>
         </div>
       </div>
     </div>
+
+    <!-- Create Shop Request Form -->
+    <ShopRequestForm
+      v-model="showCreateForm"
+      @save="handleCreateRequest"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
-import { useNotification } from '@/composables/useNotification'
+import { useNotification, useConfirm } from '@/composables'
+import DataTable from '@/components/common/DataTable.vue'
+import ShopRequestForm from '@/components/admin/forms/ShopRequestForm.vue'
 
 const { showNotification } = useNotification()
+const { confirm } = useConfirm()
 
 const requests = ref([])
 const isLoading = ref(false)
@@ -131,6 +115,14 @@ const selectedStatus = ref('')
 const showReject = ref(false)
 const rejectingRequestId = ref(null)
 const rejectionReason = ref('')
+const showCreateForm = ref(false)
+
+const columns = [
+  { key: 'shop_name', label: 'Shop Name' },
+  { key: 'username', label: 'Admin' },
+  { key: 'status', label: 'Status' },
+  { key: 'actions', label: 'Actions' },
+]
 
 onMounted(() => {
   loadRequests()
@@ -139,7 +131,7 @@ onMounted(() => {
 async function loadRequests() {
   isLoading.value = true
   try {
-    const response = await api.getShopRequests(selectedStatus.value || null)
+    const response = await api.getAllShopRequests(selectedStatus.value || null)
     requests.value = Array.isArray(response) ? response : []
   } catch (error) {
     showNotification('Error loading shop requests', 'error')
@@ -177,4 +169,174 @@ async function rejectRequest() {
     console.error(error)
   }
 }
+
+async function handleCreateRequest(formData) {
+  try {
+    await api.createShopRequest(formData)
+    showNotification('Shop request created successfully', 'success')
+    showCreateForm.value = false
+    await loadRequests()
+  } catch (error) {
+    showNotification('Error creating shop request', 'error')
+    console.error(error)
+  }
+}
+
+function handleAdd() {
+  showCreateForm.value = true
+}
 </script>
+
+<style scoped>
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+h2 {
+  margin: 0;
+  font-size: 24px;
+  color: #333;
+}
+
+.filters {
+  margin-bottom: 16px;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background: white;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-pending {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+.status-approved {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-rejected {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-primary,
+.btn-approve,
+.btn-reject,
+.btn-cancel {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+}
+
+.btn-approve {
+  background: #d1fae5;
+  color: #065f46;
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
+.btn-approve:hover {
+  background: #a7f3d0;
+}
+
+.btn-reject {
+  background: #fee2e2;
+  color: #dc2626;
+  font-size: 13px;
+  padding: 6px 12px;
+}
+
+.btn-reject:hover {
+  background: #fecaca;
+}
+
+.btn-cancel {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.btn-cancel:hover {
+  background: #e5e7eb;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-title {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #333;
+}
+
+.modal-textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  resize: vertical;
+  margin-bottom: 16px;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+</style>

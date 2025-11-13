@@ -8,6 +8,7 @@
 
       <nav class="main-nav">
         <router-link to="/products" class="nav-link">Products</router-link>
+        <router-link to="/guestbook" class="nav-link">Guestbook</router-link>
         <router-link to="/about" class="nav-link">About</router-link>
 
         <template v-if="authStore.isAuthenticated">

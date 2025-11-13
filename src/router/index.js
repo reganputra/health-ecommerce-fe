@@ -49,6 +49,11 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: '/guestbook',
+      name: 'guestbook',
+      component: () => import('../views/GuestbookView.vue'),
+    },
+    {
       path: '/admin',
       name: 'admin',
       component: () => import('../views/AdminView.vue'),
