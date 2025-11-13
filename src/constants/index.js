@@ -110,18 +110,6 @@ export const API_ENDPOINTS = {
   // Feedback
   FEEDBACK: '/feedback/',
   PRODUCT_FEEDBACK: (productId) => `/feedback/product/${productId}`,
-
-  // Shops
-  SHOPS: '/shops',
-  ADMIN_SHOP_REQUESTS: '/admin/shop-requests',
-  ADMIN_SHOP_REQUEST: (id) => `/admin/shop-requests/${id}`,
-  ADMIN_SHOP_REQUEST_APPROVE: (id) => `/admin/shop-requests/${id}/approve`,
-  ADMIN_SHOP_REQUEST_REJECT: (id) => `/admin/shop-requests/${id}/reject`,
-
-  // GuestBook
-  GUESTBOOK: '/guestbook',
-  ADMIN_GUESTBOOK: '/admin/guestbook',
-  ADMIN_GUESTBOOK_ENTRY: (id) => `/admin/guestbook/${id}`,
 }
 
 // Pagination

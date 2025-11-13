@@ -189,53 +189,6 @@ class HealthStoreAPI {
     )
   }
 
-  // ==================== Shops ====================
-  async getShops() {
-    return this.client.get(API_ENDPOINTS.SHOPS, { auth: false })
-  }
-
-  async createShopRequest(shopData) {
-    return this.client.post(API_ENDPOINTS.ADMIN_SHOP_REQUESTS, shopData)
-  }
-
-  async getShopRequests(status = null) {
-    const url = status
-      ? `${API_ENDPOINTS.ADMIN_SHOP_REQUESTS}?status=${status}`
-      : API_ENDPOINTS.ADMIN_SHOP_REQUESTS
-    return this.client.get(url)
-  }
-
-  async getShopRequest(id) {
-    return this.client.get(API_ENDPOINTS.ADMIN_SHOP_REQUEST(id))
-  }
-
-  async approveShopRequest(id) {
-    return this.client.put(API_ENDPOINTS.ADMIN_SHOP_REQUEST_APPROVE(id))
-  }
-
-  async rejectShopRequest(id, reason = '') {
-    return this.client.put(
-      API_ENDPOINTS.ADMIN_SHOP_REQUEST_REJECT(id),
-      reason ? { rejection_reason: reason } : {}
-    )
-  }
-
-  // ==================== GuestBook ====================
-  async createGuestbookEntry(guestbookData) {
-    return this.client.post(API_ENDPOINTS.GUESTBOOK, guestbookData, { auth: false })
-  }
-
-  async getGuestbookEntries() {
-    return this.client.get(API_ENDPOINTS.ADMIN_GUESTBOOK)
-  }
-
-  async getGuestbookEntry(id) {
-    return this.client.get(API_ENDPOINTS.ADMIN_GUESTBOOK_ENTRY(id))
-  }
-
-  async deleteGuestbookEntry(id) {
-    return this.client.delete(API_ENDPOINTS.ADMIN_GUESTBOOK_ENTRY(id))
-  }
 }
 
 // Export singleton instance

@@ -9,8 +9,6 @@
       <CategoriesTab v-if="activeTab === 'categories'" />
       <OrdersTab v-if="activeTab === 'orders'" />
       <UsersTab v-if="activeTab === 'users'" />
-      <ShopsTab v-if="activeTab === 'shops'" />
-      <GuestbookTab v-if="activeTab === 'guestbook'" />
       <ReportsTab v-if="activeTab === 'reports'" />
     </div>
   </div>
@@ -24,8 +22,6 @@ import ProductsTab from '@/components/admin/tabs/ProductsTab.vue'
 import CategoriesTab from '@/components/admin/tabs/CategoriesTab.vue'
 import OrdersTab from '@/components/admin/tabs/OrdersTab.vue'
 import UsersTab from '@/components/admin/tabs/UsersTab.vue'
-import ShopsTab from '@/components/admin/tabs/ShopsTab.vue'
-import GuestbookTab from '@/components/admin/tabs/GuestbookTab.vue'
 import ReportsTab from '@/components/admin/tabs/ReportsTab.vue'
 
 const productsStore = useProductsStore()
@@ -36,8 +32,6 @@ const tabs = [
   { id: 'categories', label: 'Categories' },
   { id: 'orders', label: 'Orders' },
   { id: 'users', label: 'Users' },
-  { id: 'shops', label: 'Shops' },
-  { id: 'guestbook', label: 'GuestBook' },
   { id: 'reports', label: 'Reports' },
 ]
 
