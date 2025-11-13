@@ -194,6 +194,10 @@ class HealthStoreAPI {
     return this.client.get(API_ENDPOINTS.SHOPS, { auth: false })
   }
 
+  async getShops() {
+    return this.getAllShops()
+  }
+
   async getShop(id) {
     return this.client.get(API_ENDPOINTS.SHOP(id), { auth: false })
   }

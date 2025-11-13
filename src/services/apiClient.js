@@ -1,7 +1,9 @@
 import { storage } from '@/composables/useStorage'
 import { STORAGE_KEYS } from '@/constants'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080'
+// In development, use empty string to use relative paths (goes through Vite proxy)
+// In production, set VITE_API_BASE_URL in .env to your backend URL
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || ''
 
 /**
  * HTTP Client for API requests

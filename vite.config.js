@@ -40,6 +40,32 @@ export default defineConfig({
       '/admin': {
         target: 'http://localhost:8080',
         changeOrigin: true,
+        bypass: function (req, res, options) {
+          // Don't proxy if it's a navigation request (HTML)
+          if (req.headers.accept && req.headers.accept.includes('text/html')) {
+            return '/index.html'
+          }
+        },
+      },
+      '/guestbook': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        bypass: function (req, res, options) {
+          // Don't proxy if it's a navigation request (HTML)
+          if (req.headers.accept && req.headers.accept.includes('text/html')) {
+            return '/index.html'
+          }
+        },
+      },
+      '/shops': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        bypass: function (req, res, options) {
+          // Don't proxy if it's a navigation request (HTML)
+          if (req.headers.accept && req.headers.accept.includes('text/html')) {
+            return '/index.html'
+          }
+        },
       },
     },
   },
