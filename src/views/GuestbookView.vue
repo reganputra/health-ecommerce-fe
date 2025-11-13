@@ -115,38 +115,43 @@
           </form>
         </div>
 
-        <!-- Messages Section -->
-        <div class="messages-card">
+        <!-- Info Section -->
+        <div class="info-card">
           <div class="card-header">
-            <div class="header-icon">💭</div>
-            <h2 class="card-title">Recent Messages</h2>
-            <p class="card-subtitle">{{ entries.length }} {{ entries.length === 1 ? 'message' : 'messages' }}</p>
+            <div class="header-icon">ℹ️</div>
+            <h2 class="card-title">About Guestbook</h2>
           </div>
 
-          <div class="messages-container">
-            <div v-if="entries.length === 0" class="empty-state">
-              <div class="empty-icon">📝</div>
-              <p class="empty-title">No messages yet</p>
-              <p class="empty-subtitle">Be the first to share your thoughts!</p>
+          <div class="info-content">
+            <div class="info-item">
+              <div class="info-icon">📝</div>
+              <div>
+                <h3 class="info-title">Share Your Experience</h3>
+                <p class="info-text">Tell us about your experience with our health store. Your feedback helps us improve!</p>
+              </div>
             </div>
 
-            <div
-              v-for="entry in entries"
-              :key="entry.id"
-              class="message-item"
-            >
-              <div class="message-avatar">
-                {{ getInitials(entry.name) }}
+            <div class="info-item">
+              <div class="info-icon">🔒</div>
+              <div>
+                <h3 class="info-title">Privacy First</h3>
+                <p class="info-text">Your messages are reviewed by our team before being displayed publicly.</p>
               </div>
-              <div class="message-content">
-                <div class="message-header">
-                  <h3 class="message-name">{{ entry.name }}</h3>
-                  <span class="message-date">
-                    {{ formatDate(entry.created_at) }}
-                  </span>
-                </div>
-                <p class="message-email">{{ entry.email }}</p>
-                <p class="message-text">{{ entry.message }}</p>
+            </div>
+
+            <div class="info-item">
+              <div class="info-icon">⚡</div>
+              <div>
+                <h3 class="info-title">Quick Response</h3>
+                <p class="info-text">Our team reviews all entries regularly to ensure quality and authenticity.</p>
+              </div>
+            </div>
+
+            <div class="info-item">
+              <div class="info-icon">💬</div>
+              <div>
+                <h3 class="info-title">Community Voice</h3>
+                <p class="info-text">Join our growing community of satisfied customers sharing their stories.</p>
               </div>
             </div>
           </div>
@@ -169,21 +174,9 @@ const form = ref({
   message: '',
 })
 
-const entries = ref([])
 const isSubmitting = ref(false)
 const successMessage = ref('')
 const errorMessage = ref('')
-
-onMounted(async () => {
-  try {
-    const response = await api.getGuestbookEntries()
-    if (response && Array.isArray(response)) {
-      entries.value = response
-    }
-  } catch (error) {
-    console.error('Error loading guestbook:', error)
-  }
-})
 
 async function submitEntry() {
   isSubmitting.value = true
@@ -191,48 +184,25 @@ async function submitEntry() {
   successMessage.value = ''
 
   try {
-    await api.createGuestbookEntry({
+    const response = await api.createGuestbookEntry({
       name: form.value.name,
       email: form.value.email,
       message: form.value.message,
     })
 
-    successMessage.value = 'Thank you! Your message has been submitted.'
+    successMessage.value = 'Thank you! Your message has been submitted successfully. It will be reviewed by our team.'
     form.value = { name: '', email: '', message: '' }
-
-    // Reload entries to show the new message
-    const response = await api.getGuestbookEntries()
-    if (response && Array.isArray(response)) {
-      entries.value = response
-    }
 
     setTimeout(() => {
       successMessage.value = ''
     }, 5000)
   } catch (error) {
-    errorMessage.value = error.message || 'Failed to submit message. Please try again.'
+    errorMessage.value = error.response?.data?.error || error.message || 'Failed to submit message. Please try again.'
   } finally {
     isSubmitting.value = false
   }
 }
 
-function formatDate(dateString) {
-  const date = new Date(dateString)
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  })
-}
-
-function getInitials(name) {
-  return name
-    .split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2)
-}
 </script>
 
 <style scoped>
@@ -370,7 +340,7 @@ function getInitials(name) {
 
 /* Card Styles */
 .form-card,
-.messages-card {
+.info-card {
   background: white;
   border-radius: 24px;
   padding: 40px;
@@ -379,7 +349,7 @@ function getInitials(name) {
 }
 
 .form-card:hover,
-.messages-card:hover {
+.info-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 25px 70px rgba(0, 0, 0, 0.2);
 }
@@ -539,130 +509,54 @@ function getInitials(name) {
   border: 1px solid #fca5a5;
 }
 
-/* Messages Section */
-.messages-container {
-  max-height: 600px;
-  overflow-y: auto;
-  padding-right: 8px;
+/* Info Section */
+.info-content {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
 }
 
-.messages-container::-webkit-scrollbar {
-  width: 6px;
-}
-
-.messages-container::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.messages-container::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 3px;
-}
-
-.messages-container::-webkit-scrollbar-thumb:hover {
-  background: #999;
-}
-
-/* Empty State */
-.empty-state {
-  text-align: center;
-  padding: 60px 20px;
-}
-
-.empty-icon {
-  font-size: 64px;
-  margin-bottom: 16px;
-  opacity: 0.6;
-}
-
-.empty-title {
-  font-size: 20px;
-  font-weight: 600;
-  color: #444;
-  margin-bottom: 8px;
-}
-
-.empty-subtitle {
-  font-size: 15px;
-  color: #999;
-}
-
-/* Message Item */
-.message-item {
+.info-item {
   display: flex;
   gap: 16px;
   padding: 20px;
   background: linear-gradient(135deg, #f8f9ff 0%, #fff5f7 100%);
   border-radius: 16px;
-  margin-bottom: 16px;
   transition: all 0.3s ease;
   border: 1px solid rgba(102, 126, 234, 0.1);
 }
 
-.message-item:hover {
+.info-item:hover {
   transform: translateX(4px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border-color: rgba(102, 126, 234, 0.3);
 }
 
-.message-avatar {
+.info-icon {
+  font-size: 32px;
+  flex-shrink: 0;
   width: 48px;
   height: 48px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-weight: 700;
-  font-size: 16px;
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 
-.message-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.message-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
-  gap: 12px;
-}
-
-.message-name {
+.info-title {
   font-size: 16px;
   font-weight: 700;
   color: #333;
-  margin: 0;
+  margin: 0 0 6px 0;
 }
 
-.message-date {
-  font-size: 12px;
-  color: #999;
-  white-space: nowrap;
-  background: white;
-  padding: 4px 10px;
-  border-radius: 8px;
-  font-weight: 500;
-}
-
-.message-email {
-  font-size: 13px;
+.info-text {
+  font-size: 14px;
   color: #666;
-  margin: 0 0 12px 0;
-}
-
-.message-text {
-  font-size: 15px;
-  color: #444;
   line-height: 1.6;
   margin: 0;
-  word-wrap: break-word;
 }
 
 /* Animations */
