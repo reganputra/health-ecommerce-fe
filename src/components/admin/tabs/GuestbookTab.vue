@@ -52,9 +52,10 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
-import { useNotification } from '@/composables/useNotification'
+import { useNotification, useConfirm } from '@/composables'
 
 const { showNotification } = useNotification()
+const { confirm } = useConfirm()
 
 const entries = ref([])
 const isLoading = ref(false)
@@ -77,7 +78,15 @@ async function loadEntries() {
 }
 
 async function deleteEntry(entryId) {
-  if (!confirm('Are you sure you want to delete this entry?')) return
+  const confirmed = await confirm({
+    title: 'Delete Guestbook Entry',
+    message: 'Are you sure you want to delete this guestbook entry? This action cannot be undone.',
+    confirmText: 'Yes, Delete',
+    cancelText: 'Cancel',
+    variant: 'danger'
+  })
+
+  if (!confirmed) return
 
   try {
     await api.deleteGuestbookEntry(entryId)

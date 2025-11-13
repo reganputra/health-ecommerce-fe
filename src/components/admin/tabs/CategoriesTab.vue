@@ -29,13 +29,14 @@
 <script setup>
 import { ref } from 'vue'
 import { useProductsStore } from '@/stores/products'
-import { useNotification } from '@/composables'
+import { useNotification, useConfirm } from '@/composables'
 import api from '@/services/api'
 import DataTable from '@/components/common/DataTable.vue'
 import CategoryForm from '@/components/admin/forms/CategoryForm.vue'
 
 const productsStore = useProductsStore()
 const { success, error } = useNotification()
+const { confirm } = useConfirm()
 
 const showForm = ref(false)
 const editingCategory = ref(null)
@@ -76,7 +77,15 @@ async function handleSave(formData) {
 }
 
 async function handleDelete(id) {
-  if (!confirm('Are you sure you want to delete this category?')) return
+  const confirmed = await confirm({
+    title: 'Delete Category',
+    message: 'Are you sure you want to delete this category? All products in this category will be affected.',
+    confirmText: 'Yes, Delete',
+    cancelText: 'Cancel',
+    variant: 'danger'
+  })
+
+  if (!confirmed) return
 
   try {
     loading.value = true

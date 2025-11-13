@@ -18,11 +18,12 @@
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
 import DataTable from '@/components/common/DataTable.vue'
-import { useNotification } from '@/composables'
+import { useNotification, useConfirm } from '@/composables'
 
 const users = ref([])
 const loading = ref(false)
 const { success, error } = useNotification()
+const { confirm } = useConfirm()
 
 const columns = [
   { key: 'id', label: 'ID' },
@@ -49,7 +50,15 @@ async function fetchUsers() {
 }
 
 async function handleDelete(id) {
-  if (!confirm('Are you sure you want to delete this user?')) return
+  const confirmed = await confirm({
+    title: 'Delete User',
+    message: 'Are you sure you want to delete this user? This action cannot be undone and will remove all user data.',
+    confirmText: 'Yes, Delete',
+    cancelText: 'Cancel',
+    variant: 'danger'
+  })
+
+  if (!confirmed) return
 
   try {
     await api.deleteUser(id)

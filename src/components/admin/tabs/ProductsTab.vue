@@ -38,12 +38,13 @@
 <script setup>
 import { ref } from 'vue'
 import { useProductsStore } from '@/stores/products'
-import { useNotification } from '@/composables'
+import { useNotification, useConfirm } from '@/composables'
 import DataTable from '@/components/common/DataTable.vue'
 import ProductForm from '@/components/admin/forms/ProductForm.vue'
 
 const productsStore = useProductsStore()
 const { success, error } = useNotification()
+const { confirm } = useConfirm()
 
 const showForm = ref(false)
 const editingProduct = ref(null)
@@ -86,7 +87,15 @@ async function handleSave(formData) {
 }
 
 async function handleDelete(id) {
-  if (!confirm('Are you sure you want to delete this product?')) return
+  const confirmed = await confirm({
+    title: 'Delete Product',
+    message: 'Are you sure you want to delete this product? This action cannot be undone.',
+    confirmText: 'Yes, Delete',
+    cancelText: 'Cancel',
+    variant: 'danger'
+  })
+
+  if (!confirmed) return
 
   try {
     await productsStore.deleteProduct(id)

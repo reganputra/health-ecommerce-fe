@@ -67,11 +67,12 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useNotification } from '@/composables'
+import { useNotification, useConfirm } from '@/composables'
 import api from '@/services/api'
 
 const router = useRouter()
 const { success, error: notifyError } = useNotification()
+const { confirm } = useConfirm()
 
 const orders = ref([])
 const loading = ref(false)
@@ -132,7 +133,15 @@ function canDownloadReceipt(status) {
 }
 
 async function cancelOrder(id) {
-  if (!confirm('Are you sure you want to cancel this order?')) {
+  const confirmed = await confirm({
+    title: 'Cancel Order',
+    message: 'Are you sure you want to cancel this order? This action cannot be undone.',
+    confirmText: 'Yes, Cancel Order',
+    cancelText: 'Keep Order',
+    variant: 'danger'
+  })
+
+  if (!confirmed) {
     return
   }
 

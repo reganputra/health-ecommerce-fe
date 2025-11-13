@@ -2,6 +2,10 @@
 import { RouterView } from 'vue-router'
 import AppHeader from './components/AppHeader.vue'
 import NotificationToast from './components/common/NotificationToast.vue'
+import ConfirmModal from './components/common/ConfirmModal.vue'
+import { useConfirm } from './composables'
+
+const confirmState = useConfirm()
 </script>
 
 <template>
@@ -11,6 +15,17 @@ import NotificationToast from './components/common/NotificationToast.vue'
       <RouterView />
     </main>
     <NotificationToast />
+    <ConfirmModal
+      v-model:isOpen="confirmState.isOpen.value"
+      :title="confirmState.title.value"
+      :message="confirmState.message.value"
+      :confirmText="confirmState.confirmText.value"
+      :cancelText="confirmState.cancelText.value"
+      :variant="confirmState.variant.value"
+      :loading="confirmState.loading.value"
+      @confirm="confirmState.handleConfirm"
+      @cancel="confirmState.handleCancel"
+    />
   </div>
 </template>
 
