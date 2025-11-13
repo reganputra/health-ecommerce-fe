@@ -141,7 +141,7 @@ export const API_ENDPOINTS = {
   SHOP: (id) => `/shops/${id}`,
 
   // Guestbook
-  GUESTBOOK: '/guestbook',
+  GUESTBOOK: '/guestbook/',
   GUESTBOOK_ENTRY: (id) => `/guestbook/${id}`,
   ADMIN_GUESTBOOK: '/admin/guestbook',
   ADMIN_GUESTBOOK_ENTRY: (id) => `/admin/guestbook/${id}`,
