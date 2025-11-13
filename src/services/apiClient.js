@@ -14,11 +14,15 @@ export class ApiClient {
   /**
    * Get request headers with optional authentication
    * @param {boolean} includeAuth - Include auth token in headers
+   * @param {boolean} isFormData - Whether the request is multipart/form-data
    * @returns {Object} Headers object
    */
-  getHeaders(includeAuth = true) {
-    const headers = {
-      'Content-Type': 'application/json',
+  getHeaders(includeAuth = true, isFormData = false) {
+    const headers = {}
+
+    // Don't set Content-Type for FormData - browser will set it with boundary
+    if (!isFormData) {
+      headers['Content-Type'] = 'application/json'
     }
 
     if (includeAuth) {
@@ -40,10 +44,12 @@ export class ApiClient {
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`
 
+    const isFormData = options.body instanceof FormData
+
     const config = {
       ...options,
       headers: {
-        ...this.getHeaders(options.auth !== false),
+        ...this.getHeaders(options.auth !== false, isFormData),
         ...options.headers,
       },
     }
@@ -74,7 +80,7 @@ export class ApiClient {
     return this.request(endpoint, {
       ...options,
       method: 'POST',
-      body: JSON.stringify(data),
+      body: data instanceof FormData ? data : JSON.stringify(data),
     })
   }
 
@@ -85,7 +91,7 @@ export class ApiClient {
     return this.request(endpoint, {
       ...options,
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: data instanceof FormData ? data : JSON.stringify(data),
     })
   }
 

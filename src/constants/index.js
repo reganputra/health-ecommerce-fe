@@ -94,6 +94,7 @@ export const API_ENDPOINTS = {
   ORDERS: '/orders/',
   ORDER: (id) => `/orders/${id}`,
   CANCEL_ORDER: (id) => `/orders/${id}/cancel`,
+  ORDER_RECEIPT: (id) => `/orders/${id}/receipt`,
 
   // Admin
   ADMIN_PRODUCTS: '/admin/products',
@@ -108,6 +109,7 @@ export const API_ENDPOINTS = {
 
   // Feedback
   FEEDBACK: '/feedback/',
+  PRODUCT_FEEDBACK: (productId) => `/feedback/product/${productId}`,
 
   // Shops
   SHOPS: '/shops',
